@@ -1,0 +1,29 @@
+CIS-565 GPU Programming and Architecture
+Final Project Proposal
+Cheng-Tso Lin, Nov. 18 2013
+
+Topic: Sparse Voxel Octree (SVO) and its application on rendering
+
+    For the final project I intend to implement a scene voxelization technique called Sparse Voxel Octree (SVO) and utilize it for rendering. The method describe in [1] will be used for SVO construction.
+    The memory consumption of SVO is very high, which is a big problem for large scenes. [4] greatly reduces the memory footprint by reducing the octree representation to Directed Acyclic Graph (DAG). I would like to investigate the possibility of implementing it, if time permits.
+ 
+    As for the rendering part, I am planning to implement Voxel Cone Tracing [2][3], using a hybrid rendering approach by using rasterization for direct lighting and cone tracing for secondary rays.
+
+    
+Tentative Schedule:
+ Now ~ 11/24    : SVO construction
+ 11/25               : Alpha Demo
+ 11/25 ~ 12/12  : Voxel Cone Tracing
+ 12/7 ~ 12/12    : Paper writing
+ 
+References:
+1. Cyril Crassin and Simon Green. “Octree-based Sparse Voxelization Using the GPU Hardware Rasterizer.” OpenGL Insights, pp. 303-319.
+
+2. Cyril Crassin, Fabrice Neyret, Miguel Sainz, Simon Green, and Elmar Eisemann. “Interactive indirect illumination using voxel cone tracing.” Pacific Graphics 2011.
+
+3. Implementing Voxel Cone Tracing   
+     http://www.altdevblogaday.com/2013/01/31/implementing-voxel-cone-tracing/
+
+4.Viktor Kämpe, Erik Sintorn, and Ulf Assarsson. 2013. High resolution 
+   sparse voxel DAGs. ACM Trans. Graph. 32, 4, Article 101 (July 2013)
+
