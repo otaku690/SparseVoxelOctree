@@ -8,6 +8,7 @@
 #include <gl/freeglut.h>
 #include <glm/glm.hpp>
 #include <glm.h>
+#include <glslUtility.h>
 
 int width = 1024;
 int height = 768;
