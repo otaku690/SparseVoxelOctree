@@ -1,3 +1,9 @@
+// Sparse Voxel Octree and Voxel Cone Tracing
+// 
+// University of Pennsylvania CIS565 final project
+// copyright (c) 2013 Cheng-Tso Lin  
+
+#include <gl/glew.h>
 #include "shader.h"
 #include "glslUtility.h"
 
@@ -58,10 +64,10 @@ void ShaderProgram::setParameter( shaderAttrib type, void* param, char* name )
     case fv4:
         glUniform4fv( glGetUniformLocation( program, name ), 1, (float*)param );
         break;
-    case mat4:
+    case mat4x4:
         glUniformMatrix4fv( glGetUniformLocation( program, name ), 1, GL_FALSE, (float*)param );
         break;
-    case mat3:
+    case mat3x3:
         glUniformMatrix3fv( glGetUniformLocation( program, name ), 1, GL_FALSE, (float*)param );
         break;
     }
