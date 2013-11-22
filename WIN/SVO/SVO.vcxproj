@@ -57,6 +57,8 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>..\..\3party\freeglut\lib;..\..\3party\glew\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>freeglut.lib;glew32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -77,9 +79,17 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\3party\glm.cpp" />
+    <ClCompile Include="..\..\src\glRoutine.cpp" />
+    <ClCompile Include="..\..\src\glslUtility.cpp" />
     <ClCompile Include="..\..\src\main.cpp" />
+    <ClCompile Include="..\..\src\objLoader.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\3party\glm.h" />
+    <ClInclude Include="..\..\src\glRoutine.h" />
+    <ClInclude Include="..\..\src\glslUtility.h" />
+    <ClInclude Include="..\..\src\objLoader.h" />
     <ClInclude Include="..\..\src\variables.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

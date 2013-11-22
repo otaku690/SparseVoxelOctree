@@ -7,7 +7,8 @@
 #ifndef _VARIABLES_H
 #define _VARIABLES_H
 
-extern int width;
-extern int height;
+extern int g_width;
+extern int g_height;
+extern int g_winId;
 
 #endif

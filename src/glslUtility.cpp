@@ -1,13 +1,14 @@
 // GLSL Utility: A utility class for loading GLSL shaders, for Patrick Cozzi's CIS565: GPU Computing at the University of Pennsylvania
 // Written by Varun Sampath and Patrick Cozzi, Copyright (c) 2012 University of Pennsylvania
 // Modified by Cheng-Tso Lin to accommodate geometry shader creation
+
 #include "glslUtility.h"
 
 #include <iostream>
 #include <fstream>
 #include <string>
 
-using std::ios;
+using namespace std;
 
 namespace glslUtility {
 
@@ -21,9 +22,9 @@ namespace glslUtility {
 		ifstream file (fname, ios::in|ios::binary|ios::ate);
 		if (file.is_open())
 		{
-			size = file.tellg();
-			fSize = (GLuint) size;
-			memblock = new char [size];
+			size = (int)file.tellg();
+		
+			memblock = new char[size];
 			file.seekg (0, ios::beg);
 			file.read (memblock, size);
 			file.close();

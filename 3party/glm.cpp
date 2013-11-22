@@ -302,19 +302,19 @@ glmReadMTL(GLMmodel* model, char* name)
   for (i = 0; i < nummaterials; i++) {
     model->materials[i].name = NULL;
     model->materials[i].texture_name = NULL;
-    model->materials[i].shininess = 65.0;
-    model->materials[i].diffuse[0] = 0.8;
-    model->materials[i].diffuse[1] = 0.8;
-    model->materials[i].diffuse[2] = 0.8;
-    model->materials[i].diffuse[3] = 1.0;
-    model->materials[i].ambient[0] = 0.2;
-    model->materials[i].ambient[1] = 0.2;
-    model->materials[i].ambient[2] = 0.2;
-    model->materials[i].ambient[3] = 1.0;
-    model->materials[i].specular[0] = 0.0;
-    model->materials[i].specular[1] = 0.0;
-    model->materials[i].specular[2] = 0.0;
-    model->materials[i].specular[3] = 1.0;
+    model->materials[i].shininess = 65.0f;
+    model->materials[i].diffuse[0] = 0.8f;
+    model->materials[i].diffuse[1] = 0.8f;
+    model->materials[i].diffuse[2] = 0.8f;
+    model->materials[i].diffuse[3] = 1.0f;
+    model->materials[i].ambient[0] = 0.2f;
+    model->materials[i].ambient[1] = 0.2f;
+    model->materials[i].ambient[2] = 0.2f;
+    model->materials[i].ambient[3] = 1.0f;
+    model->materials[i].specular[0] = 0.0f;
+    model->materials[i].specular[1] = 0.0f;
+    model->materials[i].specular[2] = 0.0f;
+    model->materials[i].specular[3] = 1.0f;
   }
   model->materials[0].name = strdup("default");
 
@@ -335,8 +335,8 @@ glmReadMTL(GLMmodel* model, char* name)
     case 'N':
       fscanf(file, "%f", &model->materials[nummaterials].shininess);
       /* wavefront shininess is from [0, 1000], so scale for OpenGL */
-      model->materials[nummaterials].shininess /= 1000.0;
-      model->materials[nummaterials].shininess *= 128.0;
+      model->materials[nummaterials].shininess /= 1000.0f;
+      model->materials[nummaterials].shininess *= 128.0f;
       break;
 	case 'm':
 	  fgets(buf, sizeof(buf), file);
@@ -812,9 +812,9 @@ glmUnitize(GLMmodel* model)
   d = glmAbs(maxz) + glmAbs(minz);
 
   /* calculate center of the model */
-  cx = (maxx + minx) / 2.0;
-  cy = (maxy + miny) / 2.0;
-  cz = (maxz + minz) / 2.0;
+  cx = (maxx + minx) / 2.0f;
+  cy = (maxy + miny) / 2.0f;
+  cz = (maxz + minz) / 2.0f;
 
   /* calculate unitizing scale factor */
   scale = 2.0 / glmMax(glmMax(w, h), d);
