@@ -15,4 +15,7 @@ void glut_motion( int x, int y );
 void glut_keyboard( unsigned char key, int x, int y );
 ////////////////
 
+void initShader();
+void initVertexData();
+
 #endif

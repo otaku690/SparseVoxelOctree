@@ -84,12 +84,14 @@
     <ClCompile Include="..\..\src\glslUtility.cpp" />
     <ClCompile Include="..\..\src\main.cpp" />
     <ClCompile Include="..\..\src\objLoader.cpp" />
+    <ClCompile Include="..\..\src\shader.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\3party\glm.h" />
     <ClInclude Include="..\..\src\glRoutine.h" />
     <ClInclude Include="..\..\src\glslUtility.h" />
     <ClInclude Include="..\..\src\objLoader.h" />
+    <ClInclude Include="..\..\src\shader.h" />
     <ClInclude Include="..\..\src\variables.h" />
   </ItemGroup>
   <ItemGroup>
