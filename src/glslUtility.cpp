@@ -22,9 +22,9 @@ namespace glslUtility {
 		ifstream file (fname, ios::in|ios::binary|ios::ate);
 		if (file.is_open())
 		{
-			size = (int)file.tellg();
-		
-			memblock = new char[size];
+			size = file.tellg();
+			fSize = (GLuint) size;
+			memblock = new char [size];
 			file.seekg (0, ios::beg);
 			file.read (memblock, size);
 			file.close();
@@ -99,7 +99,7 @@ namespace glslUtility {
         glGetShaderiv (shader, GL_COMPILE_STATUS, &compiled) ; 
 		if (!compiled)
 		{
-			cout << "Vertex shader not compiled." << endl;
+			cout << "Shader not compiled." << endl;
 			printShaderInfoLog(shader);
 		} 
         delete [] ss;

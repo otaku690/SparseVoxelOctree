@@ -78,6 +78,9 @@ void main( int argc, char* argv[] )
     glutMouseFunc( glut_mouse );
     glutMotionFunc( glut_motion );
 
+    initShader();
+    initVertexData();
+
     glutMainLoop();
 
 }

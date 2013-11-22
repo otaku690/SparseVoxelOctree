@@ -7,11 +7,11 @@
 
 in vec4 v_color;
 in vec4 v_vertex;
-in vec4 v_normal;
+in vec3 v_normal;
 layout (location = 0) out vec4 gl_FragColor;
 
 uniform vec4 lightposn;
-uniform vec4 lgihtColor;
+uniform vec4 lightColor;
 
 uniform vec4 ambient;
 uniform vec4 diffuse;
@@ -26,7 +26,7 @@ void main()
 
 	vec3 L = normalize( lightposn.xyz - v_vertex.xyz );
 	vec3 H = normalize( L + eyeRay );
-	vec4 color = lightColor * ( diffuse * max( dot( normal, L ), 0 ) + specular * pow( max( dot( N, H ), 0 ), shininess ) );
+	vec4 color = lightColor * ( diffuse * max( dot( v_normal, L ), 0 ) + specular * pow( max( dot( N, H ), 0 ), shininess ) );
 
 	gl_FragColor = color + emission + shininess;
 
