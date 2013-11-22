@@ -1,13 +1,14 @@
+// Sparse Voxel Octree and Voxel Cone Tracing
+// 
+// University of Pennsylvania CIS565 final project
+// copyright (c) 2013 Cheng-Tso Lin  
+
 #ifndef _SHADER_H
 #define _SHADER_H
 
-#include <gl/glew.h>
-
 enum shaderAttrib{
-    fv3, fv4, f1, mat4, mat3, tex
+    fv3, fv4, f1, mat4x4, mat3x3, tex
 };
-
-#endif
 
 class ShaderProgram
 {
@@ -24,3 +25,5 @@ private:
     GLuint gs; //geometry shader
     GLuint program;
 };
+
+#endif
