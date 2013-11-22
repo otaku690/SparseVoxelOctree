@@ -1,0 +1,38 @@
+#--
+#-- materials for cow.obj model
+#--
+
+newmtl face
+Ka 0 0 0
+Kd .8 .4 .4
+
+newmtl hide
+Ka 0 0 0
+Kd .6 .6 .45
+
+#-- same as hide
+newmtl utter_tail
+Ka 0 0 0
+Kd .6 .6 .45
+
+newmtl hoofs
+Ka 0 0 0
+Kd .4 .4 .4
+Ks .4 .4 .4
+Ns 30
+
+newmtl horns
+Ka 0 0 0
+Kd .8 .8 .8
+Ks .8 .8 .8
+Ns 20
+
+newmtl tail
+Ka 0 0 0
+Kd .4 .4 .3
+
+#-- should be "udder" not "utter"
+newmtl utter
+Ka 0 0 0
+Kd .8 .4 .4
+Ns 20

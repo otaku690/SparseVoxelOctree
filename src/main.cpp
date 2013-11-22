@@ -3,12 +3,14 @@
 // University of Pennsylvania CIS565 final project
 // copyright (c) 2013 Cheng-Tso Lin  
 
-#include  <iostream>
+#include <iostream>
+#include <sstream>
 #include <gl/glew.h>
 #include <gl/freeglut.h>
 #include <glm/glm.hpp>
 #include <glm.h>
 #include "glRoutine.h"
+#include "objLoader.h"
 #include "variables.h"
 
 //Eanble High Performance GPU on Optimus devices
@@ -21,8 +23,32 @@ int g_width = 1280;
 int g_height = 720;
 int g_winId;
 
+objLoader g_meshloader;
+
 void main( int argc, char* argv[] )
 {
+    //load model
+    int numLoadedMesh = 0;
+    for( int i = 1; i < argc; ++i )
+    {
+        string header;
+        string data;
+        istringstream line(argv[i]);
+        getline( line, header, '=' );
+        getline( line, data, '=' );
+        if( header.compare( "mesh" ) == 0 )
+        {
+            numLoadedMesh += g_meshloader.load( data );
+        }
+    }
+
+    if( numLoadedMesh == 0 )
+    {
+        cout << "Usage: mesh=[obj file]" << endl;
+        system("pause");
+        return;
+    }
+
     glutInit( &argc, argv );
     glutInitDisplayMode( GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH );
     glutInitContextVersion( 4, 3 );

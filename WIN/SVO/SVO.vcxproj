@@ -92,6 +92,10 @@
     <ClInclude Include="..\..\src\objLoader.h" />
     <ClInclude Include="..\..\src\variables.h" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="shader\light.frag.glsl" />
+    <None Include="shader\light.vert.glsl" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

@@ -48,4 +48,8 @@
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="shader\light.vert.glsl" />
+    <None Include="shader\light.frag.glsl" />
+  </ItemGroup>
 </Project>
