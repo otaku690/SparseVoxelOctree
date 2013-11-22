@@ -9,6 +9,9 @@
 
 using namespace glslUtility;
 
+namespace shader
+{
+
 ShaderProgram::ShaderProgram()
 {
     program = 0;
@@ -71,4 +74,6 @@ void ShaderProgram::setParameter( shaderAttrib type, void* param, char* name )
         glUniformMatrix3fv( glGetUniformLocation( program, name ), 1, GL_FALSE, (float*)param );
         break;
     }
+}
+
 }
