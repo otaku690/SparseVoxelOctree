@@ -89,7 +89,7 @@ int objLoader::load( string &filename )
 
         GLMtriangle* tri;
 
-        for( int i = 0; i < group->numtriangles; ++i )
+        for( unsigned int i = 0; i < group->numtriangles; ++i )
         {
             tri = &model->triangles[group->triangles[i]];
 

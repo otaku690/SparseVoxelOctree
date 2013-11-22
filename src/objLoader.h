@@ -2,6 +2,9 @@
 // 
 // University of Pennsylvania CIS565 final project
 // copyright (c) 2013 Cheng-Tso Lin  
+#ifndef _OBJLOADER_H
+#define _OBJLOADER_H
+
 #include <glm/glm.hpp> 
 #include <vector>
 
@@ -61,3 +64,5 @@ public:
     int getModelCount() const;
     const ObjModel* getModel( int idx ) const;
 };
+
+#endif
