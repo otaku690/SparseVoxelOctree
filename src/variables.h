@@ -7,7 +7,8 @@
 #ifndef _VARIABLES_H
 #define _VARIABLES_H
 
-#include "objLoader.h"
+//Forward declaration
+class objLoader;
 
 extern int g_width;
 extern int g_height;
