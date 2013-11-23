@@ -29,5 +29,5 @@ void main()
 	vec4 color = lightColor * ( diffuse * max( dot( v_normal, L ), 0 ) + specular * pow( max( dot( N, H ), 0 ), shininess ) );
 
 	gl_FragColor = color + emission + shininess;
-
+	gl_FragColor += vec4( 1, 1, 1, 1 );
 }

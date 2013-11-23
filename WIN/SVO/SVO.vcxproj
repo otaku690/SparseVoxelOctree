@@ -80,6 +80,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\3party\glm.cpp" />
+    <ClCompile Include="..\..\src\camera.cpp" />
     <ClCompile Include="..\..\src\glRoutine.cpp" />
     <ClCompile Include="..\..\src\glslUtility.cpp" />
     <ClCompile Include="..\..\src\main.cpp" />
@@ -88,6 +89,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\3party\glm.h" />
+    <ClInclude Include="..\..\src\camera.h" />
     <ClInclude Include="..\..\src\glRoutine.h" />
     <ClInclude Include="..\..\src\glslUtility.h" />
     <ClInclude Include="..\..\src\objLoader.h" />
