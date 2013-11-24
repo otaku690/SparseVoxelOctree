@@ -18,19 +18,21 @@ uniform int u_height;
 
 void main()
 {
-    vec4 data = vec4(1.0,1.0,1.0,1.0);
+    vec4 data = vec4(1.0,0.0,0.0,0.0);
     //ivec3 temp = ivec3( gl_FragCoord.x, gl_FragCoord.y, u_width * gl_FragCoord.z ) ;
-	ivec3 temp = ivec3( gl_FragCoord.y, gl_FragCoord.x,0 ) ;
+	ivec3 temp = ivec3( gl_FragCoord.x, gl_FragCoord.y, u_width * gl_FragCoord.z ) ;
 	ivec3 texcoord;
 	if( f_axis == 1 )
 	{
 	    texcoord.x = u_width - temp.z;
 		texcoord.z = temp.x;
+		texcoord.y = temp.y;
 	}
 	else if( f_axis == 2 )
     {
 	    texcoord.z = temp.y;
-		texcoord.y = u_height - temp.z;
+		texcoord.y = u_width-temp.z;
+		texcoord.x = temp.x;
 	}
 	else
 	    texcoord = temp;

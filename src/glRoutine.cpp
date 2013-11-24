@@ -23,7 +23,7 @@ mat4 modelview;
 mat4 projection;
 mat3 normalMat;
 
-vec3 eyePos = vec3(0,0,2 );
+vec3 eyePos = vec3(0.5,0.5,2 );
 vec3 eyeLook = vec3(0,0,-1);
 vec3 upDir = vec3(0,1,0);
 Camera cam( eyePos, eyeLook, upDir );
@@ -44,7 +44,7 @@ GLuint ibo[10];
 GLuint vao[10];
 
 //voxel dimension
-int voxelDim = 128;
+int voxelDim = 256;
 GLuint voxelTex = 0;
 
 void glut_display()
@@ -56,16 +56,16 @@ void glut_display()
     
     modelview = cam.get_view();
     normalMat = transpose( inverse( mat3( modelview ) ) );
-
+    //glViewport(0,0,512,512 );
     //mat4 Ortho = glm::ortho( -1.0f, 1.0f, -1.0f, 1.0f, zNear, zFar );
 
-    //Create an modelview-orthographic projection matrix see from X axis
+    ////Create an modelview-orthographic projection matrix see from X axis
     //mat4 mvpX = Ortho * glm::lookAt( vec3( 5, 0, 0 ), vec3( 0, 0, 0 ), vec3( 0, 1, 0 ) );
 
-    //Create an modelview-orthographic projection matrix see from X axis
+    ////Create an modelview-orthographic projection matrix see from X axis
     //mat4 mvpY = Ortho * glm::lookAt( vec3( 0, 5, 0 ), vec3( 0, 0, 0 ), vec3( 0, 0, -1 ) );
 
-    //Create an modelview-orthographic projection matrix see from X axis
+    ////Create an modelview-orthographic projection matrix see from X axis
     //mat4 mvpZ = Ortho * glm::lookAt( vec3( 0, 0, 5 ), vec3( 0, 0, 0 ), vec3( 0, 1, 0 ) );
 
     lightShader.use();
@@ -82,7 +82,7 @@ void glut_display()
     //lightShader.setParameter( shader::mat4x4, (void*)&mvpY[0][0], "u_MVPy" );
     //lightShader.setParameter( shader::mat4x4, (void*)&mvpZ[0][0], "u_MVPz" );
 
-    //int numModel = g_meshloader.getModelCount();
+    int numModel = g_meshloader.getModelCount();
     //for( int i = 0; i < numModel; ++i )
     //{
     //    const ObjModel* model = g_meshloader.getModel(i);
@@ -95,7 +95,7 @@ void glut_display()
     //    glDrawElements( GL_TRIANGLES, model->numIdx, GL_UNSIGNED_INT, (void*)0 );
     //}
 
-    glBindBuffer( GL_ARRAY_BUFFER, vbo[1] );
+    glBindBuffer( GL_ARRAY_BUFFER, vbo[numModel] );
     glBindVertexArray( vao[0] );
     glVertexAttribPointer( 0, 3, GL_FLOAT, GL_FALSE, 0, (GLubyte*)NULL );
     glEnableVertexAttribArray(0);
@@ -232,18 +232,21 @@ void initVertexData()
 
 unsigned int gen3DTexture( int dim )
 {
-    //unsigned char* data = new unsigned char[4*dim*dim*dim];
-    //memset( data, 0, sizeof(unsigned char)*4*dim*dim*dim );
+    float* data = new float[dim*dim*dim];
+    memset( data, 0, sizeof(float)*dim*dim*dim );
 
     GLuint texId;
     glGenTextures( 1, &texId );
     glBindTexture( GL_TEXTURE_3D, texId );
+    //glActiveTexture(GL_TEXTURE0 );
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_BASE_LEVEL, 0);
-    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAX_LEVEL, 0);  
-    glTexImage3D( GL_TEXTURE_3D, 0, GL_R32F, dim, dim, dim, 0, GL_RED, GL_FLOAT, NULL );
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAX_LEVEL, 0);
+    glTexParameteri(GL_TEXTURE_3D,  GL_TEXTURE_MIN_FILTER, GL_NEAREST);  
+    glTexParameteri(GL_TEXTURE_3D,  GL_TEXTURE_MAG_FILTER, GL_NEAREST); 
+    glTexImage3D( GL_TEXTURE_3D, 0, GL_R32F, dim, dim, dim, 0, GL_RED, GL_FLOAT, data );
     glBindTexture( GL_TEXTURE_3D, 0 );
 
-    //delete [] data;
+    delete [] data;
     return texId;
 }
 
@@ -259,9 +262,9 @@ float* createPointCube( int dim )
             offset = yoffset + z*dim;
             for( int x = 0; x < dim; ++x )
             {
-                data[ 3*( offset + x ) ] = x / (float)dim - 0.5f;
-                data[ 3*( offset + x )+1 ] = y / (float)dim - 0.5f;
-                data[ 3*( offset + x )+2 ] = z / (float)dim- 0.5f;
+                data[ 3*( offset + x ) ] = x / (float)dim;
+                data[ 3*( offset + x )+1 ] = y / (float)dim;
+                data[ 3*( offset + x )+2 ] = z / (float)dim;
             }
         }
     }
@@ -278,16 +281,17 @@ void voxelizeScene()
 
     glViewport( 0, 0,  voxelDim,  voxelDim );
     //Orthograhic projection
-    mat4 Ortho = glm::ortho( -1.0f, 1.0f, -1.0f, 1.0f, zNear, zFar );
+    mat4 Ortho; 
+    //Create an modelview-orthographic projection matrix see from +X axis
+    Ortho = glm::ortho( -1.0f, 1.0f, -1.0f, 1.0f, 2.0f-1.0f, 3.0f );
 
-    //Create an modelview-orthographic projection matrix see from X axis
-    mat4 mvpX = Ortho * glm::lookAt( vec3( 5, 0, 0 ), vec3( 0, 0, 0 ), vec3( 0, 1, 0 ) );
+    mat4 mvpX = Ortho * glm::lookAt( vec3( 2, 0, 0 ), vec3( 0, 0, 0 ), vec3( 0, 1, 0 ) );
 
-    //Create an modelview-orthographic projection matrix see from X axis
-    mat4 mvpY = Ortho * glm::lookAt( vec3( 0, 5, 0 ), vec3( 0, 0, 0 ), vec3( 0, 0, -1 ) );
+    //Create an modelview-orthographic projection matrix see from +Y axis
+    mat4 mvpY = Ortho * glm::lookAt( vec3( 0, 2, 0 ), vec3( 0, 0, 0 ), vec3( 0, 0, -1 ) );
 
-    //Create an modelview-orthographic projection matrix see from X axis
-    mat4 mvpZ = Ortho * glm::lookAt( vec3( 0, 0, 5 ), vec3( 0, 0, 0 ), vec3( 0, 1, 0 ) );
+    //Create an modelview-orthographic projection matrix see from +Z axis
+    mat4 mvpZ = Ortho * glm::lookAt( vec3( 0, 0, 2 ), vec3( 0, 0, 0 ), vec3( 0, 1, 0 ) );
 
 
 
@@ -304,7 +308,6 @@ void voxelizeScene()
     voxelizeShader.setParameter( shader::i1, (void*)&voxelDim, "u_width" );
     voxelizeShader.setParameter( shader::i1, (void*)&voxelDim, "u_height" );
 
-    int voxelImgId = 0;
     
     //glEnable( GL_TEXTURE_3D );
     //glActiveTexture( GL_TEXTURE0 );

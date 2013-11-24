@@ -49,6 +49,9 @@ public:
 
     Group* groups;
     int numGroup;
+
+    vec3 min;
+    vec3 max;
 };
 
 class objLoader
