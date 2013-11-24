@@ -82,4 +82,10 @@ void ShaderProgram::setParameter( shaderAttrib type, void* param, char* name )
     }
 }
 
+void ShaderProgram::setTexParameter( int idx, char* name )
+{
+    int loc = glGetUniformLocation( program, name );
+    glUniform1i( loc, idx );
+}
+
 }

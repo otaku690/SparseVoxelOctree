@@ -74,7 +74,10 @@ void glut_display()
     lightShader.setParameter( shader::mat3x3, (void*)&normalMat[0][0], "u_Normal" );
     float halfDim = 0.5f/voxelDim;
     lightShader.setParameter( shader::f1, (void*)&(halfDim), "u_halfDim" );
-    lightShader.setParameter( shader::i1, (void*)&voxelTex, "u_voxel" );
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_3D, voxelTex );
+    lightShader.setTexParameter( 0, "u_voxel" );
     //lightShader.setParameter( shader::mat4x4, (void*)&mvpX[0][0], "u_MVPx" );
     //lightShader.setParameter( shader::mat4x4, (void*)&mvpY[0][0], "u_MVPy" );
     //lightShader.setParameter( shader::mat4x4, (void*)&mvpZ[0][0], "u_MVPz" );
@@ -99,6 +102,8 @@ void glut_display()
 
     glDrawArrays( GL_POINTS, 0, voxelDim * voxelDim * voxelDim );
     glutSwapBuffers();
+
+    glBindTexture(GL_TEXTURE_3D, 0 );
 }
 
 void glut_idle()
@@ -227,14 +232,18 @@ void initVertexData()
 
 unsigned int gen3DTexture( int dim )
 {
+    //unsigned char* data = new unsigned char[4*dim*dim*dim];
+    //memset( data, 0, sizeof(unsigned char)*4*dim*dim*dim );
+
     GLuint texId;
     glGenTextures( 1, &texId );
     glBindTexture( GL_TEXTURE_3D, texId );
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);  
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_BASE_LEVEL, 0);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAX_LEVEL, 0);  
     glTexImage3D( GL_TEXTURE_3D, 0, GL_R32F, dim, dim, dim, 0, GL_RED, GL_FLOAT, NULL );
-
     glBindTexture( GL_TEXTURE_3D, 0 );
+
+    //delete [] data;
     return texId;
 }
 
@@ -287,6 +296,7 @@ void voxelizeScene()
     glDisable( GL_DEPTH_TEST );
     glColorMask( GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE );
 
+
     voxelizeShader.use();
     voxelizeShader.setParameter( shader::mat4x4, (void*)&mvpX[0][0], "u_MVPx" );
     voxelizeShader.setParameter( shader::mat4x4, (void*)&mvpY[0][0], "u_MVPy" );
@@ -295,8 +305,12 @@ void voxelizeScene()
     voxelizeShader.setParameter( shader::i1, (void*)&voxelDim, "u_height" );
 
     int voxelImgId = 0;
-    glBindImageTexture( 0, voxelTex, 0, GL_FALSE, 0, GL_READ_WRITE, GL_R32F );
-    voxelizeShader.setParameter( shader::img, (void*)&voxelImgId, "u_voxelImage" );
+    
+    //glEnable( GL_TEXTURE_3D );
+    //glActiveTexture( GL_TEXTURE0 );
+    //glBindTexture( GL_TEXTURE_3D, voxelTex );
+    glBindImageTexture( 0, voxelTex, 0, GL_TRUE, voxelDim, GL_READ_WRITE, GL_R32F );
+    voxelizeShader.setTexParameter( 0, "u_voxelImage" );
 
     int numModel = g_meshloader.getModelCount();
     for( int i = 0; i < numModel; ++i )
@@ -311,6 +325,8 @@ void voxelizeScene()
         glDrawElements( GL_TRIANGLES, model->numIdx, GL_UNSIGNED_INT, (void*)0 );
     }
 
+    glBindTexture( GL_TEXTURE_3D, 0 );
+    glDisable( GL_TEXTURE_3D );
     glEnable( GL_CULL_FACE );
     glEnable( GL_DEPTH_TEST );
     glColorMask( GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE );

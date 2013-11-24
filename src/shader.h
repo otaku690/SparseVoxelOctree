@@ -22,6 +22,7 @@ public:
     void use();
     void unuse();
     void setParameter( shaderAttrib type, void* param, char* name );
+    void setTexParameter( int idx, char* name );
 private:
     GLuint vs; //vertex shader
     GLuint fs; //fragment shader
