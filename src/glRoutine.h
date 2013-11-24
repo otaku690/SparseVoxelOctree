@@ -15,7 +15,15 @@ void glut_motion( int x, int y );
 void glut_keyboard( unsigned char key, int x, int y );
 ////////////////
 
+///Scene voxelization
+void voxelizeScene();
+////
+
 void initShader();
 void initVertexData();
+float* createPointCube( int dim );
+
+///3D texture generation
+unsigned int gen3DTexture( int dim );
 
 #endif

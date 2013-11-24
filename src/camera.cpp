@@ -35,14 +35,16 @@ void Camera::adjust(float dx, // look left right
     }
 
     if (abs(ty) > 0) {
-        z += ty;
+        vec3 dir = glm::rotate(start_dir,ry+90,-start_left);
+        vec2 dir2(dir.x,dir.y);
+        vec2 mag = dir2 * ty;
+        pos += mag; 
     }
 
     if (abs(tz) > 0) {
-        vec3 dir = glm::rotate(start_dir,rx,up);
-        vec2 dir2(dir.x,dir.y);
-        vec2 mag = dir2 * tz;
-        pos += mag;
+
+     z += tz;
+
     }
 }
 

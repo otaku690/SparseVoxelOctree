@@ -58,6 +58,9 @@ void ShaderProgram::setParameter( shaderAttrib type, void* param, char* name )
 {
     switch( type )
     {
+    case i1:
+        glUniform1i( glGetUniformLocation( program, name ), *((int*)param) );
+        break;
     case f1:
         glUniform1f( glGetUniformLocation( program, name ), *((float*)param) );
         break;
@@ -72,6 +75,9 @@ void ShaderProgram::setParameter( shaderAttrib type, void* param, char* name )
         break;
     case mat3x3:
         glUniformMatrix3fv( glGetUniformLocation( program, name ), 1, GL_FALSE, (float*)param );
+        break;
+    case img:
+        glUniform1i( glGetUniformLocation( program, name ), *((int*)param) );
         break;
     }
 }

@@ -63,5 +63,9 @@
   <ItemGroup>
     <None Include="shader\light.vert.glsl" />
     <None Include="shader\light.frag.glsl" />
+    <None Include="shader\voxelize.geom.glsl" />
+    <None Include="shader\voxelize.frag.glsl" />
+    <None Include="shader\voxelize.vert.glsl" />
+    <None Include="shader\light.geom.glsl" />
   </ItemGroup>
 </Project>

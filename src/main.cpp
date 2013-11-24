@@ -80,7 +80,7 @@ void main( int argc, char* argv[] )
 
     initShader();
     initVertexData();
-
+    voxelizeScene();
     glutMainLoop();
 
 }

@@ -19,8 +19,8 @@ uniform mat3 u_Normal;
 
 void main()
 {
-	v_vertex = u_ModelView * glVertex;
+	v_vertex = glVertex;
 	v_normal = u_Normal * glNormal;
 	v_color = glColor; 
-	 gl_Position = u_Proj * u_ModelView * glVertex;
+	gl_Position = u_Proj * u_ModelView * glVertex;
 }

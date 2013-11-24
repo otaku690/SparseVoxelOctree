@@ -10,7 +10,7 @@ namespace shader
 {
 
 enum shaderAttrib{
-    fv3, fv4, f1, mat4x4, mat3x3, tex
+    i1, fv3, fv4, f1, mat4x4, mat3x3, tex, img
 };
 
 class ShaderProgram
