@@ -21,7 +21,7 @@ void voxelizeScene();
 
 void initShader();
 void initVertexData();
-float* createPointCube( int dim );
+void createPointCube( int dim );
 
 ///3D texture generation
 unsigned int gen3DTexture( int dim );

@@ -38,10 +38,10 @@ shader::ShaderProgram lightShader;
 shader::ShaderProgram voxelizeShader;
 
 //OpenGL buffer objects
-GLuint vbo[10]; 
-GLuint nbo[10];
-GLuint ibo[10];
-GLuint vao[10];
+GLuint vbo[10] = {0}; 
+GLuint nbo[10] = {0};
+GLuint ibo[10] = {0};
+GLuint vao[10] = {0};
 
 //voxel dimension
 int voxelDim = 256;
@@ -76,6 +76,7 @@ void glut_display()
     lightShader.setParameter( shader::f1, (void*)&(halfDim), "u_halfDim" );
 
     glActiveTexture(GL_TEXTURE0);
+    glEnable( GL_TEXTURE_3D );
     glBindTexture(GL_TEXTURE_3D, voxelTex );
     lightShader.setTexParameter( 0, "u_voxel" );
     //lightShader.setParameter( shader::mat4x4, (void*)&mvpX[0][0], "u_MVPx" );
@@ -95,7 +96,7 @@ void glut_display()
     //    glDrawElements( GL_TRIANGLES, model->numIdx, GL_UNSIGNED_INT, (void*)0 );
     //}
 
-    glBindBuffer( GL_ARRAY_BUFFER, vbo[numModel] );
+    glBindBuffer( GL_ARRAY_BUFFER, vbo[9] );
     glBindVertexArray( vao[0] );
     glVertexAttribPointer( 0, 3, GL_FLOAT, GL_FALSE, 0, (GLubyte*)NULL );
     glEnableVertexAttribArray(0);
@@ -104,6 +105,8 @@ void glut_display()
     glutSwapBuffers();
 
     glBindTexture(GL_TEXTURE_3D, 0 );
+    glBindBuffer( GL_ARRAY_BUFFER, 0 );
+    lightShader.unuse();
 }
 
 void glut_idle()
@@ -168,11 +171,26 @@ void glut_keyboard( unsigned char key, int x, int y )
         case (27):
             exit(0.0);
             break;
+        case '1':
+            voxelDim = 256;
+            createPointCube(voxelDim);
+            voxelizeScene();
+            break;
+        case '2':
+            voxelDim = 128;
+            createPointCube(voxelDim);
+            voxelizeScene();
+            break;
+        case '3':
+            voxelDim = 64;
+            createPointCube(voxelDim);
+            voxelizeScene();
+            break;
         case ('w'):
-            tz = 0.1;
+            tz = -0.1;
             break;
         case ('s'):
-            tz = -0.1;
+            tz = 0.1;
             break;
         case ('d'):
             tx = -0.1;
@@ -207,6 +225,7 @@ void initVertexData()
     for( int i = 0; i < numModel; ++i )
     {
         const ObjModel* model = g_meshloader.getModel(i);
+
         glGenBuffers( 1, &vbo[i] );
         glBindBuffer( GL_ARRAY_BUFFER, vbo[i] );
         glBufferData( GL_ARRAY_BUFFER, sizeof(float) * 3 * model->numVert, model->vbo, GL_STATIC_DRAW  );
@@ -220,13 +239,8 @@ void initVertexData()
     }
 
     //Create a cube comprised of points, for voxel visualization
-    float* cubePoints = createPointCube( voxelDim );
-    glGenBuffers( 1, &vbo[numModel] );
-    glBindBuffer( GL_ARRAY_BUFFER, vbo[numModel] );
-    glBufferData( GL_ARRAY_BUFFER, sizeof(float) * 3 * voxelDim * voxelDim * voxelDim, cubePoints, GL_STATIC_DRAW );
-    glBindBuffer( GL_ARRAY_BUFFER, 0 );
-    delete [] cubePoints; cubePoints = 0;
-     
+    createPointCube( voxelDim );
+
     glGenBuffers( 1, &vao[0] );
 }
 
@@ -250,7 +264,7 @@ unsigned int gen3DTexture( int dim )
     return texId;
 }
 
-float* createPointCube( int dim )
+void createPointCube( int dim )
 {
     float* data = new float[ 3 * dim * dim * dim ];
     int yoffset, offset;
@@ -268,7 +282,16 @@ float* createPointCube( int dim )
             }
         }
     }
-    return data;
+
+    if( vbo[9] ) 
+        glDeleteBuffers(1, &vbo[9] );
+    glGenBuffers( 1, &vbo[9] );
+    glBindBuffer( GL_ARRAY_BUFFER, vbo[9] );
+    glBufferData( GL_ARRAY_BUFFER, sizeof(float) * 3 * voxelDim * voxelDim * voxelDim, data, GL_STATIC_DRAW );
+    glBindBuffer( GL_ARRAY_BUFFER, 0 );
+
+    delete [] data;
+  
 }
 
 void voxelizeScene()
@@ -326,13 +349,12 @@ void voxelizeScene()
 
         glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, ibo[i] );
         glDrawElements( GL_TRIANGLES, model->numIdx, GL_UNSIGNED_INT, (void*)0 );
+        glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 );
     }
 
-    glBindTexture( GL_TEXTURE_3D, 0 );
-    glDisable( GL_TEXTURE_3D );
     glEnable( GL_CULL_FACE );
     glEnable( GL_DEPTH_TEST );
     glColorMask( GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE );
     glViewport( 0, 0, g_width, g_height );
-    glutSwapBuffers();
+    //glutSwapBuffers();
 }
