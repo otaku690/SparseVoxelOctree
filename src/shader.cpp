@@ -88,4 +88,26 @@ void ShaderProgram::setTexParameter( int idx, char* name )
     glUniform1i( loc, idx );
 }
 
+ComputeShader::ComputeShader()
+{  
+}
+
+ComputeShader::~ComputeShader()
+{
+}
+
+int ComputeShader::init( const char* cs_source )
+{
+    //load shader sources and compile
+    shaders_t shaderSet = loadShaders( NULL, NULL, NULL, cs_source );
+   
+    //create program
+    program = glCreateProgram();
+
+    //attach shader 
+    attachAndLinkProgram( program, shaderSet );
+
+    return 0;
+}
+
 }

@@ -16,7 +16,9 @@ void glut_keyboard( unsigned char key, int x, int y );
 ////////////////
 
 ///Scene voxelization
-void voxelizeScene();
+void voxelizeScene(int bStore);
+void buildVoxelList();
+void buildSVO();
 ////
 
 void initShader();
@@ -26,4 +28,9 @@ void createPointCube( int dim );
 ///3D texture generation
 unsigned int gen3DTexture( int dim );
 
+///Linear buffer generation 
+int genLinearBuffer( int size, GLenum format, GLuint* tex, GLuint* tbo );
+
+//Atomic counter  generation
+unsigned int genAtomicBuffer( int num, int idx );
 #endif

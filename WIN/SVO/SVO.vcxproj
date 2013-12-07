@@ -103,9 +103,14 @@
     <None Include="shader\light.frag.glsl" />
     <None Include="shader\light.geom.glsl" />
     <None Include="shader\light.vert.glsl" />
+    <None Include="shader\nodeAlloc.com.glsl" />
+    <None Include="shader\nodeFlag.com.glsl" />
     <None Include="shader\voxelize.frag.glsl" />
     <None Include="shader\voxelize.geom.glsl" />
     <None Include="shader\voxelize.vert.glsl" />
+    <None Include="shader\voxelTo3DTex.frag.glsl" />
+    <None Include="shader\voxelTo3DTex.geom.glsl" />
+    <None Include="shader\voxelTo3DTex.vert.glsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

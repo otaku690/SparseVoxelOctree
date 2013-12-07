@@ -3,7 +3,7 @@
 // University of Pennsylvania CIS565 final project
 // copyright (c) 2013 Cheng-Tso Lin  
 
-//Fragment shader for scene voxelization
+//Geometry shader for scene voxelization
 //Using the method described in Ch. 22, OpenGL Insights
 
 # version 430

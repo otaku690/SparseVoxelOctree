@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Source Files\Shader">
+      <UniqueIdentifier>{32a3c7d5-f9bd-4d08-b823-4797c074b5fe}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\main.cpp">
@@ -61,11 +64,38 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="shader\light.vert.glsl" />
-    <None Include="shader\light.frag.glsl" />
-    <None Include="shader\voxelize.geom.glsl" />
-    <None Include="shader\voxelize.frag.glsl" />
-    <None Include="shader\voxelize.vert.glsl" />
-    <None Include="shader\light.geom.glsl" />
+    <None Include="shader\light.frag.glsl">
+      <Filter>Source Files\Shader</Filter>
+    </None>
+    <None Include="shader\light.geom.glsl">
+      <Filter>Source Files\Shader</Filter>
+    </None>
+    <None Include="shader\light.vert.glsl">
+      <Filter>Source Files\Shader</Filter>
+    </None>
+    <None Include="shader\voxelize.frag.glsl">
+      <Filter>Source Files\Shader</Filter>
+    </None>
+    <None Include="shader\voxelize.geom.glsl">
+      <Filter>Source Files\Shader</Filter>
+    </None>
+    <None Include="shader\voxelize.vert.glsl">
+      <Filter>Source Files\Shader</Filter>
+    </None>
+    <None Include="shader\voxelTo3DTex.vert.glsl">
+      <Filter>Source Files\Shader</Filter>
+    </None>
+    <None Include="shader\voxelTo3DTex.frag.glsl">
+      <Filter>Source Files\Shader</Filter>
+    </None>
+    <None Include="shader\voxelTo3DTex.geom.glsl">
+      <Filter>Source Files\Shader</Filter>
+    </None>
+    <None Include="shader\nodeFlag.com.glsl">
+      <Filter>Source Files\Shader</Filter>
+    </None>
+    <None Include="shader\nodeAlloc.com.glsl">
+      <Filter>Source Files\Shader</Filter>
+    </None>
   </ItemGroup>
 </Project>

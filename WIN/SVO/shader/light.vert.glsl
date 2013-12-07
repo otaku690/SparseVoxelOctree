@@ -3,7 +3,7 @@
 // University of Pennsylvania CIS565 final project
 // copyright (c) 2013 Cheng-Tso Lin  
 
-# version 400
+# version 430
 
 layout (location = 0) in vec4 glVertex;
 layout (location = 1) in vec4 glColor;

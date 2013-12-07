@@ -80,7 +80,8 @@ void main( int argc, char* argv[] )
 
     initShader();
     initVertexData();
-    voxelizeScene();
+    buildVoxelList();
+    buildSVO();       //build sparse voxel octree
     glutMainLoop();
 
 }

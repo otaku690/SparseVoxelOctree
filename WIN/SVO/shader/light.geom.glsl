@@ -3,7 +3,7 @@
 // University of Pennsylvania CIS565 final project
 // copyright (c) 2013 Cheng-Tso Lin  
 
-# version 400
+# version 430
 
 //layout ( triangles ) in;
 //layout ( triangle_strip, max_vertices = 3 ) out;
@@ -32,7 +32,7 @@ void main()
 	vec4 pos, color;
 	float density = texture(  u_voxel, v_vertex[0].xyz ).r;
 	if( density > 0.0 )
-	    color = vec4( 1,1,1, 0 );
+	    color = vec4( 1,1,1,0 );
     else
 	    return;
 	f_vertex = v_vertex[0];

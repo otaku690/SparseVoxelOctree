@@ -3,7 +3,7 @@
 // University of Pennsylvania CIS565 final project
 // copyright (c) 2013 Cheng-Tso Lin  
 
-# version 400
+# version 430
 
 in vec4 f_vertex;
 in vec4 f_color;

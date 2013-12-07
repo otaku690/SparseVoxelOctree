@@ -1,6 +1,6 @@
 // GLSL Utility: A utility class for loading GLSL shaders, for Patrick Cozzi's CIS565: GPU Computing at the University of Pennsylvania
 // Written by Varun Sampath and Patrick Cozzi, Copyright (c) 2012 University of Pennsylvania
-// Modified by Cheng-Tso Lin to accommodate geometry shader creation
+// Modified by Cheng-Tso Lin to accommodate geometry shader and compute shader creation
 
 #include "glslUtility.h"
 
@@ -107,25 +107,34 @@ namespace glslUtility {
         return shader ; 
     }
 
-	shaders_t loadShaders(const char * vert_path, const char * frag_path, const char * geom_path) {
-		GLuint f, v, g = 0;
-
-		v = initshaders( GL_VERTEX_SHADER, vert_path );
-        f = initshaders( GL_FRAGMENT_SHADER, frag_path );
+	shaders_t loadShaders(const char * vert_path, const char * frag_path, const char * geom_path, const char * compute_path) {
+		GLuint f = 0, v = 0, g = 0, c = 0;
+        
+        if( vert_path )
+		    v = initshaders( GL_VERTEX_SHADER, vert_path );
+        if( frag_path )
+            f = initshaders( GL_FRAGMENT_SHADER, frag_path );
         if( geom_path )
             g = initshaders( GL_GEOMETRY_SHADER, geom_path );
+        if( compute_path )
+            c = initshaders( GL_COMPUTE_SHADER, compute_path );
 
         shaders_t out; out.vertex = v; out.fragment = f; out.geometry = g;
+        out.compute = c;
 
 		return out;
 	}
 
-	void attachAndLinkProgram( GLuint program, shaders_t shaders) {
-		glAttachShader(program, shaders.vertex);
-		glAttachShader(program, shaders.fragment);
+	void attachAndLinkProgram( GLuint program, shaders_t shaders) 
+    {
+        if( shaders.vertex )
+            glAttachShader(program, shaders.vertex);
+        if( shaders.fragment )
+		    glAttachShader(program, shaders.fragment);
         if( shaders.geometry )
             glAttachShader(program, shaders.geometry  );
-
+        if( shaders.compute)
+            glAttachShader(program, shaders.compute  );
 		glLinkProgram(program);
 		GLint linked;
 		glGetProgramiv(program,GL_LINK_STATUS, &linked);

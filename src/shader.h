@@ -23,11 +23,19 @@ public:
     void unuse();
     void setParameter( shaderAttrib type, void* param, char* name );
     void setTexParameter( int idx, char* name );
-private:
+protected:
     GLuint vs; //vertex shader
     GLuint fs; //fragment shader
     GLuint gs; //geometry shader
     GLuint program;
+};
+
+class ComputeShader: public ShaderProgram
+{
+public:
+    ComputeShader();
+    ~ComputeShader();
+    int init( const char* cs_source );
 };
 
 }
