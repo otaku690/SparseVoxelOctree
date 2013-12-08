@@ -82,19 +82,16 @@
     <None Include="shader\voxelize.vert.glsl">
       <Filter>Source Files\Shader</Filter>
     </None>
-    <None Include="shader\voxelTo3DTex.vert.glsl">
-      <Filter>Source Files\Shader</Filter>
-    </None>
-    <None Include="shader\voxelTo3DTex.frag.glsl">
-      <Filter>Source Files\Shader</Filter>
-    </None>
-    <None Include="shader\voxelTo3DTex.geom.glsl">
-      <Filter>Source Files\Shader</Filter>
-    </None>
     <None Include="shader\nodeFlag.com.glsl">
       <Filter>Source Files\Shader</Filter>
     </None>
     <None Include="shader\nodeAlloc.com.glsl">
+      <Filter>Source Files\Shader</Filter>
+    </None>
+    <None Include="shader\nodeInit.com.glsl">
+      <Filter>Source Files\Shader</Filter>
+    </None>
+    <None Include="shader\fill3Dtex.com.glsl">
       <Filter>Source Files\Shader</Filter>
     </None>
   </ItemGroup>

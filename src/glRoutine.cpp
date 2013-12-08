@@ -6,6 +6,7 @@
 
 #define GLM_SWIZZLE
 #include <iostream>
+#include <vector>
 #include <gl/glew.h>
 #include <gl/freeglut.h>
 #include <glm/gtc/matrix_transform.hpp>
@@ -41,6 +42,8 @@ shader::ShaderProgram voxelTo3DTexShader; //shader program that converts voxel f
 shader::ComputeShader nodeFlagShader;
 shader::ComputeShader nodeAllocShader;
 shader::ComputeShader nodeInitShader;
+
+shader::ComputeShader octreeTo3DtexShader;
 
 //OpenGL buffer objects
 GLuint vbo[10] = {0}; 
@@ -239,6 +242,9 @@ void initShader()
 
     nodeFlagShader.init( "shader/nodeFlag.com.glsl" );
     nodeAllocShader.init( "shader/nodeAlloc.com.glsl" );
+    nodeInitShader.init( "shader/nodeInit.com.glsl" );
+
+
 }
 
 void initVertexData()
@@ -316,11 +322,11 @@ int genLinearBuffer( int size, GLenum format, GLuint* tex, GLuint* tbo )
 unsigned int genAtomicBuffer( int num, int idx )
 {
     GLuint buffer;
-    GLuint counterData = 0;
+    GLuint initVal = 0;
 
     glGenBuffers( 1, &buffer );
     glBindBuffer( GL_ATOMIC_COUNTER_BUFFER, buffer );
-    glBufferData( GL_ATOMIC_COUNTER_BUFFER, sizeof( GLuint ), &counterData, GL_STATIC_DRAW );
+    glBufferData( GL_ATOMIC_COUNTER_BUFFER, sizeof( GLuint ), &initVal, GL_STATIC_DRAW );
     glBindBuffer( GL_ATOMIC_COUNTER_BUFFER, 0 );
 
     return buffer;
@@ -461,16 +467,23 @@ void buildVoxelList()
     memset( count, 0, sizeof( GLuint ) );
 
     glUnmapBuffer( GL_ATOMIC_COUNTER_BUFFER );
-    
+    glBindBuffer( GL_ATOMIC_COUNTER_BUFFER, 0 );
+
     //Voxelize the scene again, this time store the data in the voxel fragment list
     voxelizeScene(1);
     glMemoryBarrier( GL_SHADER_IMAGE_ACCESS_BARRIER_BIT );
 
-    glBindBuffer( GL_ATOMIC_COUNTER_BUFFER, 0 );
+   
 }
 
 void buildSVO()
 { 
+    GLenum err;
+
+    GLuint allocCounter;
+    vector<unsigned int> allocList; //the vector records the number of nodes in each tree level
+    allocList.push_back(1); //root level has one node
+
     //Calculate the maximum possilbe node number
     int totalNode = 1;
     int nTmp = 1;
@@ -483,10 +496,15 @@ void buildSVO()
     //Create an octree node pool with one-eighth maximum node number
     genLinearBuffer( totalNode / 8, GL_R32UI, &octreeNodeTex, &octreeNodeTbo );
 
+    //Create an atomic counter for counting # of allocated node tiles, in each octree level
+    allocCounter = genAtomicBuffer( 1, 0 );
+
     //For each octree level (top to bottom), subdivde nodes in 3 steps
     //1. flag nodes that have child nodes ( one thread for each entries in voexl fragment list )
     //2. allocate buffer space for child nodes ( one thread for each node )
     //3. initialize the content of child nodes ( one thread for each node in the new octree level )
+    int nodeOffset = 0;
+    int allocOffset = 1;
     int groupDim  = (numVoxelFrag + 63)/64;
     for( int i = 0; i < octreeLevel; ++i )
     {
@@ -494,9 +512,56 @@ void buildSVO()
         nodeFlagShader.use();
         nodeFlagShader.setParameter( shader::i1, (void*)&numVoxelFrag, "u_numVoxelFrag" );
         nodeFlagShader.setParameter( shader::i1, (void*)&i, "u_level" );
-        voxelizeShader.setParameter( shader::i1, (void*)&voxelDim, "u_voxelDim" );
+        nodeFlagShader.setParameter( shader::i1, (void*)&voxelDim, "u_voxelDim" );
         glBindImageTexture( 0, voxelPosTex, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGB10_A2UI );
         glBindImageTexture( 1, octreeNodeTex, 0, GL_FALSE, 0, GL_READ_WRITE, GL_R32UI );
         glDispatchCompute( groupDim, 1, 1 );
+        glMemoryBarrier( GL_SHADER_IMAGE_ACCESS_BARRIER_BIT );
+
+        //node tile allocation
+        nodeAllocShader.use();
+        nodeAllocShader.setParameter( shader::i1, (void*)&allocList[i], "u_num" );
+        nodeAllocShader.setParameter( shader::i1, (void*)&nodeOffset, "u_start" );
+        nodeAllocShader.setParameter( shader::i1, (void*)&allocOffset, "u_allocStart" );
+        glBindImageTexture( 1, octreeNodeTex, 0, GL_FALSE, 0, GL_READ_WRITE, GL_R32UI );
+        glBindBufferBase( GL_ATOMIC_COUNTER_BUFFER, 0, allocCounter );
+
+        int allocGroupDim = (allocList[i]+63)/64;
+        glDispatchCompute( allocGroupDim, 1, 1 );
+        glMemoryBarrier( GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_ATOMIC_COUNTER_BARRIER_BIT );
+        
+        //Get the number of node tiles to allocate in the next level
+        GLuint titleAllocated;
+        GLuint reset = 0;
+        glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, allocCounter );
+        glGetBufferSubData( GL_ATOMIC_COUNTER_BUFFER, 0, sizeof(GLuint), &titleAllocated );
+        glBufferSubData( GL_ATOMIC_COUNTER_BUFFER, 0, sizeof(GLuint), &reset ); //reset counter to zero
+        glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, 0 );
+
+        //node tile initialization
+        int nodeAllocated = titleAllocated * 8;
+        nodeInitShader.use();
+        nodeInitShader.setParameter( shader::i1, (void*)&nodeAllocated, "u_num" );
+        nodeInitShader.setParameter( shader::i1, (void*)&allocOffset, "u_allocStart" );
+        glBindImageTexture( 1, octreeNodeTex, 0, GL_FALSE, 0, GL_READ_WRITE, GL_R32UI );
+
+        int initGroupDim = ( nodeAllocated + 63 ) / 64;
+        glDispatchCompute( initGroupDim, 1, 1 );
+
+        //update offsets for next level
+        allocList.push_back( nodeAllocated ); //titleAllocated * 8 is the number of threads
+                                              //we want to launch in the next level
+        nodeOffset += allocList[i]; //nodeOffset is the starting node in the next level
+        allocOffset += titleAllocated * 8; //allocOffset is the starting address of remaining free space
+        err = glGetError();
+
     }
+}
+
+void octreeTo3Dtex()
+{
+    GLenum err;
+
+    octreeTo3DtexShader.use();
+
 }

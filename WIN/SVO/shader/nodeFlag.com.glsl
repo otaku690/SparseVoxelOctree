@@ -44,7 +44,7 @@ void main()
     for( int i = 1; i <= u_level; ++i )
     {
 	    voxelDim /= 2;
-		childIdx = node & 0x7FFFFFFF;  //mask out flag bit to get child idx
+		childIdx = int(node) & 0x7FFFFFFF;  //mask out flag bit to get child idx
 
 	    if( loc.x >= umin.x && loc.x < umin.x+voxelDim &&
 		    loc.y >= umin.y && loc.y < umin.y+voxelDim &&
@@ -66,7 +66,7 @@ void main()
 		    loc.x >= umin.x && loc.x < umin.x+voxelDim &&
 		    loc.y >= umin.y && loc.y < umin.y+voxelDim &&
 			loc.z >= umin.z + voxelDim && loc.z < umin.z + 2*voxelDim 
-		}
+		)
 		{
 		    childIdx += 2;
 			umin.z += voxelDim;
@@ -75,7 +75,7 @@ void main()
 		    loc.x >= umin.x + voxelDim && loc.x < umin.x + 2*voxelDim &&
 		    loc.y >= umin.y && loc.y < umin.y+voxelDim &&
 			loc.z >= umin.z + voxelDim && loc.z < umin.z + 2*voxelDim 
-		}
+		)
 		{
 		    childIdx += 3;
 			umin.x += voxelDim;
@@ -85,7 +85,7 @@ void main()
 		    loc.x >= umin.x && loc.x < umin.x + voxelDim &&
 		    loc.y >= umin.y + voxelDim && loc.y < umin.y + 2*voxelDim &&
 			loc.z >= umin.z && loc.z < umin.z + voxelDim 
-		}
+		)
 		{
 		    childIdx += 4;
 			umin.y += voxelDim;
@@ -95,7 +95,7 @@ void main()
 		    loc.x >= umin.x + voxelDim && loc.x < umin.x + 2*voxelDim &&
 		    loc.y >= umin.y + voxelDim && loc.y < umin.y + 2*voxelDim &&
 			loc.z >= umin.z && loc.z < umin.z + voxelDim 
-		}
+		)
 		{
 		    childIdx += 5;
 			umin.x += voxelDim;
@@ -105,7 +105,7 @@ void main()
 		    loc.x >= umin.x && loc.x < umin.x + voxelDim &&
 		    loc.y >= umin.y + voxelDim && loc.y < umin.y + 2*voxelDim &&
 			loc.z >= umin.z + voxelDim && loc.z < umin.z + voxelDim*2 
-		}
+		)
 		{
 		    childIdx += 6;
 			umin.z += voxelDim;

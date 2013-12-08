@@ -79,9 +79,10 @@ void main( int argc, char* argv[] )
     glutMotionFunc( glut_motion );
 
     initShader();
-    initVertexData();
-    buildVoxelList();
-    buildSVO();       //build sparse voxel octree
+    initVertexData(); 
+    buildVoxelList(); //build a voxel fragment list
+    buildSVO();       //build a sparse voxel octree
+    octreeTo3Dtex();  //for visualization purpose
     glutMainLoop();
 
 }
