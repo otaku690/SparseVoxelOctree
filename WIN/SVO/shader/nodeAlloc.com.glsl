@@ -9,7 +9,7 @@ uniform int u_start;
 uniform int u_allocStart;
 uniform int u_num;
 
-uniform layout( binding=1, r32ui ) uimageBuffer u_octreeBuf;
+uniform layout( binding = 0, r32ui ) uimageBuffer u_octreeBuf;
 
 //atomic counter 
 layout ( binding = 0, offset = 0 ) uniform atomic_uint u_allocCount;
@@ -24,12 +24,12 @@ void main()
 	//get child pointer
 	uint childIdx = imageLoad( u_octreeBuf, u_start + int(thxId) ).r;
 
-	if( (childIdx >> 31 ) == 1 ) //need to allocate
+	if( (childIdx & 0x80000000 ) != 0 ) //need to allocate
 	{
 	    offset = atomicCounterIncrement( u_allocCount );
 		offset *= 8; //one tile has eight nodes
 		offset += u_allocStart; //Add allocation offset 
-		offset |= 0x800000;    //Set the most significant bit
+		offset |= 0x80000000;    //Set the most significant bit
 		imageStore( u_octreeBuf, u_start + int(thxId), uvec4(offset,0,0,0) );
     }
 }

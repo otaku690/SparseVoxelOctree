@@ -15,6 +15,10 @@ void glut_motion( int x, int y );
 void glut_keyboard( unsigned char key, int x, int y );
 ////////////////
 
+///rendering routines
+void renderVoxel();
+void renderScene();
+
 ///Scene voxelization
 void voxelizeScene(int bStore);
 void buildVoxelList();

@@ -101,9 +101,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="shader\fill3Dtex.com.glsl" />
-    <None Include="shader\light.frag.glsl" />
-    <None Include="shader\light.geom.glsl" />
-    <None Include="shader\light.vert.glsl" />
+    <None Include="shader\renderVoxel.frag.glsl" />
+    <None Include="shader\renderVoxel.geom.glsl" />
+    <None Include="shader\renderVoxel.vert.glsl" />
     <None Include="shader\nodeAlloc.com.glsl" />
     <None Include="shader\nodeFlag.com.glsl" />
     <None Include="shader\nodeInit.com.glsl" />

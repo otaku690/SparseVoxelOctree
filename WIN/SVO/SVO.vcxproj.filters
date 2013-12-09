@@ -64,15 +64,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="shader\light.frag.glsl">
-      <Filter>Source Files\Shader</Filter>
-    </None>
-    <None Include="shader\light.geom.glsl">
-      <Filter>Source Files\Shader</Filter>
-    </None>
-    <None Include="shader\light.vert.glsl">
-      <Filter>Source Files\Shader</Filter>
-    </None>
     <None Include="shader\voxelize.frag.glsl">
       <Filter>Source Files\Shader</Filter>
     </None>
@@ -92,6 +83,15 @@
       <Filter>Source Files\Shader</Filter>
     </None>
     <None Include="shader\fill3Dtex.com.glsl">
+      <Filter>Source Files\Shader</Filter>
+    </None>
+    <None Include="shader\renderVoxel.frag.glsl">
+      <Filter>Source Files\Shader</Filter>
+    </None>
+    <None Include="shader\renderVoxel.geom.glsl">
+      <Filter>Source Files\Shader</Filter>
+    </None>
+    <None Include="shader\renderVoxel.vert.glsl">
       <Filter>Source Files\Shader</Filter>
     </None>
   </ItemGroup>

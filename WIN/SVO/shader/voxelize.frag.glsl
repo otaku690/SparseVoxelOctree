@@ -15,7 +15,7 @@ layout (pixel_center_integer) in vec4 gl_FragCoord;
 //atomic counter 
 layout ( binding = 0, offset = 0 ) uniform atomic_uint u_voxelFragCount;
 
-uniform layout(rgb10_a2ui) uimageBuffer u_voxelPos;
+uniform layout(binding = 0, rgb10_a2ui) uimageBuffer u_voxelPos;
 uniform int u_width;
 uniform int u_height;
 uniform int u_bStore; //0 for counting the number of voxel fragments
