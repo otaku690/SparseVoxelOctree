@@ -7,7 +7,7 @@
 layout (local_size_x = 8, local_size_y = 8, local_size_z = 8 ) in;
 //layout (local_size_x = 64, local_size_y = 1, local_size_z = 1 ) in;
 
-uniform layout(binding=0, r32f ) image3D u_voxelImage;
+uniform layout(binding=0, r8 ) image3D u_voxelImage;
 uniform layout(binding=1, r32ui ) uimageBuffer u_octreeBuf;
 uniform layout(binding=2, rgb10_a2ui) uimageBuffer u_voxelPos;
 uniform int u_octreeLevel;
@@ -22,48 +22,63 @@ void main()
 	uint idx = 0;
 	int depth;
 	int voxelDim = u_voxelDim;
+	bool bOccupied = true;
+
+	if( loc.x >= u_voxelDim || loc.y >= u_voxelDim || loc.z >= u_voxelDim )
+	    return ;
 	
 	//decide max and min coord for the root node
 	umin = uvec3(0,0,0);
 	umax = uvec3( voxelDim, voxelDim, voxelDim );
 
-    for( depth = 0; depth < u_octreeLevel; ++depth )
+    for( depth = 0; depth <= u_octreeLevel; ++depth )
     {
 	    idx = imageLoad( u_octreeBuf, int(idx) ).r;
+		if( (idx & 0x80000000) == 0 )
+	    {
+		    bOccupied= false;
+		    break;
+		}
+		else if( depth == u_octreeLevel )
+		    break;
+
 		idx &= 0x7FFFFFFF;  //mask out flag bit to get child pointer
 		if( idx == 0 )
+		{
+		    bOccupied = false;
 		    break;
+		}
 		voxelDim /= 2;
 
-	    if( loc.x >= umin.x && loc.x < umin.x+voxelDim &&
-		    loc.y >= umin.y && loc.y < umin.y+voxelDim &&
-			loc.z >= umin.z && loc.z < umin.z+voxelDim 
+	    if( (loc.x >= umin.x && loc.x < umin.x+voxelDim) &&
+		    (loc.y >= umin.y && loc.y < umin.y+voxelDim) &&
+			(loc.z >= umin.z && loc.z < umin.z+voxelDim) 
 		  )
 	    {
 		    
 		}
 		else if(
-            loc.x >= umin.x+voxelDim && loc.x < umin.x + 2*voxelDim &&
-		    loc.y >= umin.y && loc.y < umin.y+voxelDim &&
-			loc.z >= umin.z && loc.z < umin.z+voxelDim    
+            (loc.x >= umin.x+voxelDim && loc.x < umin.x + 2*voxelDim) &&
+		    (loc.y >= umin.y && loc.y < umin.y+voxelDim) &&
+			(loc.z >= umin.z && loc.z < umin.z+voxelDim)    
 		)
 		{
 		    idx += 1;
-		    umin.x = voxelDim;
+		    umin.x += voxelDim;
 	    }
 		else if(
-		    loc.x >= umin.x && loc.x < umin.x+voxelDim &&
-		    loc.y >= umin.y && loc.y < umin.y+voxelDim &&
-			loc.z >= umin.z + voxelDim && loc.z < umin.z + 2*voxelDim 
+		    (loc.x >= umin.x && loc.x < umin.x+voxelDim) &&
+		    (loc.y >= umin.y && loc.y < umin.y+voxelDim) &&
+			(loc.z >= umin.z + voxelDim && loc.z < umin.z + 2*voxelDim) 
 		)
 		{
 		    idx += 2;
 			umin.z += voxelDim;
 		}
 		else if(
-		    loc.x >= umin.x + voxelDim && loc.x < umin.x + 2*voxelDim &&
-		    loc.y >= umin.y && loc.y < umin.y+voxelDim &&
-			loc.z >= umin.z + voxelDim && loc.z < umin.z + 2*voxelDim 
+		    (loc.x >= umin.x + voxelDim && loc.x < umin.x + 2*voxelDim) &&
+		    (loc.y >= umin.y && loc.y < umin.y+voxelDim) &&
+			(loc.z >= umin.z + voxelDim && loc.z < umin.z + 2*voxelDim) 
 		)
 		{
 		    idx += 3;
@@ -71,9 +86,9 @@ void main()
 			umin.z += voxelDim;
 		}
 		else if(
-		    loc.x >= umin.x && loc.x < umin.x + voxelDim &&
-		    loc.y >= umin.y + voxelDim && loc.y < umin.y + 2*voxelDim &&
-			loc.z >= umin.z && loc.z < umin.z + voxelDim 
+		    (loc.x >= umin.x && loc.x < umin.x + voxelDim) &&
+		    (loc.y >= umin.y + voxelDim && loc.y < umin.y + 2*voxelDim) &&
+			(loc.z >= umin.z && loc.z < umin.z + voxelDim) 
 		)
 		{
 		    idx += 4;
@@ -81,9 +96,9 @@ void main()
 		
 		}
 		else if(
-		    loc.x >= umin.x + voxelDim && loc.x < umin.x + 2*voxelDim &&
-		    loc.y >= umin.y + voxelDim && loc.y < umin.y + 2*voxelDim &&
-			loc.z >= umin.z && loc.z < umin.z + voxelDim 
+		    (loc.x >= umin.x + voxelDim && loc.x < umin.x + 2*voxelDim) &&
+		    (loc.y >= umin.y + voxelDim && loc.y < umin.y + 2*voxelDim) &&
+			(loc.z >= umin.z && loc.z < umin.z + voxelDim )
 		)
 		{
 		    idx += 5;
@@ -91,9 +106,9 @@ void main()
 			umin.y += voxelDim;
 		}
 		else if(
-		    loc.x >= umin.x && loc.x < umin.x + voxelDim &&
-		    loc.y >= umin.y + voxelDim && loc.y < umin.y + 2*voxelDim &&
-			loc.z >= umin.z + voxelDim && loc.z < umin.z + voxelDim*2 
+		    (loc.x >= umin.x && loc.x < umin.x + voxelDim) &&
+		    (loc.y >= umin.y + voxelDim && loc.y < umin.y + 2*voxelDim) &&
+			(loc.z >= umin.z + voxelDim && loc.z < umin.z + voxelDim*2) 
 		)
 		{
 		    idx += 6;
@@ -101,9 +116,9 @@ void main()
 			umin.y += voxelDim;
 		}
 		else if(
-		    loc.x >= umin.x + voxelDim && loc.x < umin.x + 2* voxelDim &&
-		    loc.y >= umin.y + voxelDim && loc.y < umin.y + 2*voxelDim &&
-			loc.z >= umin.z + voxelDim && loc.z < umin.z + voxelDim*2 
+		    (loc.x >= umin.x + voxelDim && loc.x < umin.x + 2* voxelDim) &&
+		    (loc.y >= umin.y + voxelDim && loc.y < umin.y + 2*voxelDim) &&
+			(loc.z >= umin.z + voxelDim && loc.z < umin.z + voxelDim*2 )
 		)
 	    {
 		    idx += 7;
@@ -111,11 +126,14 @@ void main()
 		}
 		else 
 		{
+		    bOccupied = false;
 		    break;
 	    }	
 	} 
-	if( depth >= u_octreeLevel )
+	if( bOccupied )
 	    imageStore( u_voxelImage, ivec3(loc.xyz) , data );
+	else
+	    imageStore( u_voxelImage, ivec3(loc.xyz) , vec4(0,0,0,0) );
 }
 
 //void main()

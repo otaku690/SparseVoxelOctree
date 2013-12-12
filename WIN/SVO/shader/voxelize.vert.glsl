@@ -9,8 +9,6 @@
 # version 430
 
 layout (location = 0) in vec4 glVertex;
-layout (location = 1) in vec4 glColor;
-layout (location = 2) in vec3 glNormal;
 
 out vec3 v_vertex;
 void main()

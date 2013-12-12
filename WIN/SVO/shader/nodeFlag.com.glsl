@@ -59,7 +59,7 @@ void main()
 		)
 		{
 		    childIdx += 1;
-		    umin.x = voxelDim;
+		    umin.x = umin.x+voxelDim;
 	    }
 		else if(
 		    (loc.x >= umin.x && loc.x < umin.x+voxelDim) &&
