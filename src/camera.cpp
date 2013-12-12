@@ -4,9 +4,11 @@
 
 #include <glm/gtx/rotate_vector.hpp>
 #include <glm/glm.hpp>
+#include <iostream>
 #include "camera.h"
 
 using namespace glm;
+using namespace std;
 
 void Camera::adjust(float dx, // look left right
         float dy, //look up down
@@ -46,6 +48,7 @@ void Camera::adjust(float dx, // look left right
      z += tz;
 
     }
+    cout<<"X:"<<pos[0]<<" Y:"<<pos[1]<<" Z:"<<z<<endl;
 }
 
 mat4x4 Camera::get_view() {

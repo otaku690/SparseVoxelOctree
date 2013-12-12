@@ -9,6 +9,7 @@
 
 using namespace std;
 
+
 ///This error checking function is from the base code of project 6 of CIS-565 2013 Fall
 void checkFramebufferStatus(GLenum framebufferStatus)
 {

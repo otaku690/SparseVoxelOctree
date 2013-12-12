@@ -25,7 +25,7 @@ void main(void) {
     fs_Normal = vec4(Normal,0.0f).xyz;
     vec4 world = u_Model * vec4(Position, 1.0);
     vec4 camera = u_View * world;
-    fs_Position = camera;
+    fs_Position = vec4( Position, 1.0 );
 	fs_texcoord = texcoord;
     gl_Position = u_Persp * camera;
 	

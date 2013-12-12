@@ -35,12 +35,20 @@ vec3 upDir = vec3(0,1,0);
 Camera cam( eyePos, eyeLook, upDir );
 
 float FOV = 60.0f;
-float zNear = 0.01f;
+float zNear = 0.05f;
 float zFar = 10.0f;
 float aspect;
 
 //lighting
 Light light1;
+
+//Use this matrix to shift the shadow map coordinate
+glm::mat4 biasMatrix(
+0.5, 0.0, 0.0, 0.0,
+0.0, 0.5, 0.0, 0.0,
+0.0, 0.0, 0.5, 0.0,
+0.5, 0.5, 0.5, 1.0
+);
 
 
 //Shader programs-rendering
@@ -54,9 +62,13 @@ shader::ComputeShader nodeInitShader;
 
 shader::ComputeShader octreeTo3DtexShader;
 
+
 //Shader programs-deferred shading
 shader::ShaderProgram passShader;
 shader::ShaderProgram deferredShader;
+
+//Shader programs - Shadow map 
+shader::ShaderProgram shadowmapShader;
 
 //OpenGL buffer objects for loaded mesh
 GLuint vbo[10] = {0}; 
@@ -288,7 +300,7 @@ void renderScene()
     modelview = cam.get_view();
     normalMat = transpose( inverse( modelview ) );
 
-    vec4 lightPos = modelview * light1.initialPos;
+    vec4 lightPos = modelview * light1.pos;
     passShader.use();
     passShader.setParameter( shader::f1, (void*)&zFar, "u_Far" );
     passShader.setParameter( shader::f1, (void*)&zNear, "u_Near" );
@@ -335,16 +347,14 @@ void renderScene()
             glDrawElements( GL_TRIANGLES, 3*model->groups[i].numTri , GL_UNSIGNED_INT, (void*)model->groups[i].ibo_offset );
             
         }
-
-        //render the light bulb
-
-        if( render_mode == RENDERSCENEVOXEL )
-            renderVoxel();
-        //glDrawElements( GL_TRIANGLES, model->numIdx, GL_UNSIGNED_INT, (void*)0 );
     }
+      
+    if( render_mode == RENDERSCENEVOXEL )
+        renderVoxel();
 
+   
     //PASS 2: shadow map generation
-
+    renderShadowMap( light1 );
 
     //PASS 3: shading
     deferredShader.use();
@@ -362,7 +372,11 @@ void renderScene()
     vec4 testh = testp / testp.w;
     vec2 coords = vec2(testh.x, testh.y) / 2.0f + 0.5f;
 
-   
+    mat4 biasLightMVP = biasMatrix * light1.mvp;
+    deferredShader.setParameter( shader::mat4x4, &biasLightMVP[0][0], "u_lightMVP" );
+    deferredShader.setParameter( shader::mat4x4, &projection[0][0], "u_persp" );
+    deferredShader.setParameter( shader::mat4x4, &modelview[0][0], "u_modelview" );
+
     deferredShader.setParameter( shader::i1, &g_height, "u_ScreenHeight" );
     deferredShader.setParameter( shader::i1, &g_width, "u_ScreenWidth" );
     deferredShader.setParameter( shader::f1, &zFar, "u_Far" );
@@ -371,7 +385,7 @@ void renderScene()
     deferredShader.setParameter( shader::i1, &display_type, "u_DisplayType" );
 
     eyePos = cam.get_pos();
-    deferredShader.setParameter( shader::fv4, &light1.pos[0], "u_Light" );
+    deferredShader.setParameter( shader::fv4, &lightPos[0], "u_Light" );
     deferredShader.setParameter( shader::fv3, &light1.color[0], "u_LightColor" );
     deferredShader.setParameter( shader::fv3, &eyePos[0], "u_eyePos" );
 
@@ -390,6 +404,10 @@ void renderScene()
     glActiveTexture(GL_TEXTURE3);
     glBindTexture(GL_TEXTURE_2D, colorFBTex);
     deferredShader.setTexParameter( 3, "u_Colortex" );
+
+    glActiveTexture(GL_TEXTURE4);
+    glBindTexture(GL_TEXTURE_2D, shadowmapTex);
+    deferredShader.setTexParameter( 4, "u_shadowmap" );
 
     //Draw the screen space quad
     glBindVertexArray( vao[QUAD] );
@@ -411,13 +429,56 @@ void renderShadowMap( Light &light )
     glBindFramebuffer( GL_FRAMEBUFFER, FBO[1] );
     glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
-    mat4 depthProj = glm::ortho<float>(-10.0f, 10.0f, -10.0f, 10.0f );
-    mat4 depthView = glm::lookAt( vec3(light.pos), vec3(0,0,0), vec3( 0, 0, 1 ) );
+    shadowmapShader.use();
+
+    mat4 depthProj = glm::perspective<float>(60, 1, zNear, zFar );
+    mat4 depthView = glm::lookAt(  vec3(light.pos), vec3(0,0,0), vec3( 1,0,0) );
     mat4 depthModel = mat4(1.0);
-    mat4 depthMVP = depthProj * depthView * depthModel;
+    light.mvp = depthProj * depthView * depthModel;
 
+    shadowmapShader.setParameter( shader::mat4x4, &light.mvp[0][0], "u_mvp" );
 
-    glBindFramebuffer( GL_FRAMEBUFFER, FBO[1] );
+    int bTextured;
+    int numModel = g_meshloader.getModelCount();
+    for( int i = 0; i < numModel; ++i )
+    {
+        glBindVertexArray( vao[i] );
+        const ObjModel* model = g_meshloader.getModel(i);
+
+         glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, ibo[i] );
+        for( int i = 0; i < model->numGroup; ++i )
+        {
+            model->groups[i].shininess = 50;
+            shadowmapShader.setParameter( shader::fv3, &model->groups[i].kd, "u_Color" );
+            shadowmapShader.setParameter( shader::f1, &model->groups[i].shininess, "u_shininess" );
+            if( model->groups[i].texId > 0 )
+            {
+                glActiveTexture(GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, model->groups[i].texId );
+                shadowmapShader.setTexParameter( 0, "u_colorTex" );
+                bTextured = 1;
+            }
+            else
+                bTextured = 0;
+            shadowmapShader.setParameter( shader::i1, &bTextured, "u_bTextured" );
+
+            if( model->groups[i].bumpTexId > 0 )
+            {
+                glActiveTexture(GL_TEXTURE1);
+                glBindTexture(GL_TEXTURE_2D, model->groups[i].bumpTexId );
+                shadowmapShader.setTexParameter( 1, "u_bumpTex" );
+                bTextured = 1;
+            }
+            else
+                bTextured = 0;
+            shadowmapShader.setParameter( shader::i1, &bTextured, "u_bBump" );
+
+            glDrawElements( GL_TRIANGLES, 3*model->groups[i].numTri , GL_UNSIGNED_INT, (void*)model->groups[i].ibo_offset );
+            
+        }
+    }
+
+    glBindFramebuffer( GL_FRAMEBUFFER, 0 );
 }
 
 void initFBO( int w, int h )
@@ -564,6 +625,7 @@ void initShader()
     passShader.init( "shader/pass.vert.glsl", "shader/pass.frag.glsl" );
     deferredShader.init( "shader/shade.vert.glsl", "shader/diagnostic.frag.glsl" );
 
+    shadowmapShader.init( "shader/shadowmap.vert.glsl", "shader/shadowmap.frag.glsl" );
 }
 
 void initVertexData()
@@ -1031,6 +1093,6 @@ void octreeTo3Dtex()
 
 void initLight()
 {
-    light1.pos = light1.initialPos = vec4( 0, 1, 0, 0 );
+    light1.pos = light1.initialPos = vec4( 0, 0.43, 0, 1 );
     light1.color = vec3( 1, 1, 1 );
 }

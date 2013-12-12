@@ -19,12 +19,16 @@
 /////////////////////////////////////
 // Uniforms, Attributes, and Outputs
 ////////////////////////////////////
-uniform mat4 u_Persp;
+uniform mat4 u_persp;
+uniform mat4 u_modelview;
+uniform mat4 u_lightMVP;
 
 uniform sampler2D u_Depthtex;
 uniform sampler2D u_Normaltex;
 uniform sampler2D u_Positiontex;
 uniform sampler2D u_Colortex;
+
+uniform sampler2D u_shadowmap;
 
 uniform float u_Far;
 uniform float u_Near;
@@ -61,9 +65,9 @@ vec3 sampleNrm(vec2 texcoords) {
 }
 
 //Helper function to automicatlly sample and unpack positions
-vec3 samplePos(vec2 texcoords) {
+vec4 samplePos(vec2 texcoords) {
     vec4 pos = texture( u_Positiontex, texcoords );
-    return pos.xyz;
+    return pos;
 }
 
 //Helper function to automicatlly sample and unpack positions
@@ -102,11 +106,22 @@ void main() {
 
     float exp_depth = texture(u_Depthtex, fs_Texcoord).r;
     float lin_depth = linearizeDepth(exp_depth,u_Near,u_Far);
-    vec3 position = samplePos(fs_Texcoord);
+	
     vec3 normal = sampleNrm(fs_Texcoord);
 	vec4 color = sampleCol( fs_Texcoord );
 
-    out_Color = vec4( shade( u_Light, u_LightColor, color, position, normal ), 0 );  
-	//out_Color = vec4( normal, 0 );
+    vec4 pos = samplePos(fs_Texcoord);
+
+	float visibility = 1.0;
+	vec4 posEyeSpace = u_modelview * pos;
+	vec4 shadowCoord = u_lightMVP * pos;
+	float depthBias = 0.005;
+	if( textureProj( u_shadowmap, shadowCoord.xyw ).z < ( shadowCoord.z - depthBias )/shadowCoord.w  )
+	    visibility = 0.1;
+
+    out_Color = visibility*vec4( shade( u_Light, u_LightColor, color, posEyeSpace.xyz/posEyeSpace.w, normal ), 0 ); 
+	
+	//float s_depth = texture( u_shadowmap, fs_Texcoord ).r;
+	//out_Color = vec4( s_depth, s_depth, s_depth, 0 );
 }
 

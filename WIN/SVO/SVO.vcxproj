@@ -113,6 +113,8 @@
     <None Include="shader\nodeFlag.com.glsl" />
     <None Include="shader\nodeInit.com.glsl" />
     <None Include="shader\shade.vert.glsl" />
+    <None Include="shader\shadowmap.frag.glsl" />
+    <None Include="shader\shadowmap.vert.glsl" />
     <None Include="shader\voxelize.frag.glsl" />
     <None Include="shader\voxelize.geom.glsl" />
     <None Include="shader\voxelize.vert.glsl" />

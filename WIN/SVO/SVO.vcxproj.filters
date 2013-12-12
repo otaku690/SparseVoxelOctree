@@ -112,5 +112,11 @@
     <None Include="shader\shade.vert.glsl">
       <Filter>Source Files\Shader</Filter>
     </None>
+    <None Include="shader\shadowmap.vert.glsl">
+      <Filter>Source Files\Shader</Filter>
+    </None>
+    <None Include="shader\shadowmap.frag.glsl">
+      <Filter>Source Files\Shader</Filter>
+    </None>
   </ItemGroup>
 </Project>

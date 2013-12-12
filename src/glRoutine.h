@@ -39,6 +39,8 @@ struct Light
     glm::vec4 initialPos;
     glm::vec4 pos;
     glm::vec3 color;
+
+    glm::mat4 mvp; //each light has its own projection matrix
 };
 
 
@@ -55,7 +57,7 @@ void glut_keyboard( unsigned char key, int x, int y );
 ///rendering routines
 void renderVoxel();
 void renderScene();
-void renderShadowMap();
+void renderShadowMap( Light &light );
 
 ///Framebuffer objects initialization
 void initFBO( int w, int h );
