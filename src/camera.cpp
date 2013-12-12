@@ -54,3 +54,8 @@ mat4x4 Camera::get_view() {
     vec3 cent(pos, z);
     return lookAt(cent, cent + spun, up);
 }
+
+vec3 Camera::get_pos()
+{
+    return glm::vec3(pos[0], pos[1], z);
+}

@@ -239,7 +239,15 @@ glmDirName(char* path)
   if (s)
     s[1] = '\0';
   else
-    dir[0] = '\0';
+  {
+      s = strrchr( dir, '\\' );
+      if( s )
+          s[1] = '\0';
+      else
+          dir[0] = '\0';
+  }
+  //else
+  //  dir[0] = '\0';
 
   return dir;
 }
@@ -302,6 +310,8 @@ glmReadMTL(GLMmodel* model, char* name)
   for (i = 0; i < nummaterials; i++) {
     model->materials[i].name = NULL;
     model->materials[i].texture_name = NULL;
+    model->materials[i].bumpmap_name = NULL;
+    model->materials[i].mask_name = NULL;
     model->materials[i].shininess = 65.0f;
     model->materials[i].diffuse[0] = 0.8f;
     model->materials[i].diffuse[1] = 0.8f;
@@ -338,10 +348,45 @@ glmReadMTL(GLMmodel* model, char* name)
       model->materials[nummaterials].shininess /= 1000.0f;
       model->materials[nummaterials].shininess *= 128.0f;
       break;
-	case 'm':
-	  fgets(buf, sizeof(buf), file);
-      sscanf(buf, "%s %s", buf, buf);
-	  model->materials[nummaterials].texture_name = strdup(buf);
+	//case 'm':
+	//  fgets(buf, sizeof(buf), file);
+ //     sscanf(buf, "%s %s", buf, buf);
+	//  model->materials[nummaterials].texture_name = strdup(buf);
+    case 'm':
+        switch( buf[4] )
+        {
+        case 'K':
+            fgets(buf, sizeof(buf),file);
+            sscanf(buf, "%s %s", buf, buf );
+            ///model->materials[nummaterials].texture_name = strdup(buf);
+            dir = glmDirName(model->pathname);
+            model->materials[nummaterials].texture_name = (char*)malloc(sizeof(char) * (strlen(dir) + strlen(buf) + 1));
+            strcpy(model->materials[nummaterials].texture_name, dir);
+            strcat(model->materials[nummaterials].texture_name,buf);
+            free(dir);
+            break;
+        case 'd':
+            fgets(buf, sizeof(buf),file);
+            sscanf(buf, "%s %s", buf, buf );
+            ///model->materials[nummaterials].texture_name = strdup(buf);
+            dir = glmDirName(model->pathname);
+            model->materials[nummaterials].mask_name = (char*)malloc(sizeof(char) * (strlen(dir) + strlen(buf) + 1));
+            strcpy(model->materials[nummaterials].mask_name, dir);
+            strcat(model->materials[nummaterials].mask_name,buf);
+            free(dir);
+            break;
+        case 'b':
+            fgets(buf, sizeof(buf),file);
+            sscanf(buf, "%s %s", buf, buf );
+            //model->materials[nummaterials].bumpmap_name = strdup(buf);
+            dir = glmDirName(model->pathname);
+            model->materials[nummaterials].bumpmap_name = (char*)malloc(sizeof(char) * (strlen(dir) + strlen(buf) + 1));
+            strcpy(model->materials[nummaterials].bumpmap_name, dir);
+            strcat(model->materials[nummaterials].bumpmap_name,buf);
+            free(dir);
+            break;
+        }
+        break;
     case 'K':
       switch(buf[1]) {
       case 'd':
@@ -636,8 +681,8 @@ glmSecondPass(GLMmodel* model, FILE* file)
     case 'u':
       fgets(buf, sizeof(buf), file);
       sscanf(buf, "%s %s", buf, buf);
-      //group->material = material = glmFindMaterial(model, buf);
-      material = glmFindMaterial(model, buf);
+      group->material = material = glmFindMaterial(model, buf);
+      //material = glmFindMaterial(model, buf);
       break;
     case 'g':				/* group */
       /* eat up rest of line */

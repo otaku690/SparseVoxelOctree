@@ -16,44 +16,62 @@
 #include "objLoader.h"
 #include "camera.h"
 #include "variables.h"
+#include "util.h"
 
 using namespace std;
 using namespace glm;
 
-mat4 modelview;
-mat4 projection;
-mat3 normalMat;
+const int NUM_RENDERTARGET = 3;
 
-vec3 eyePos = vec3(0.5,0.5,2 );
+mat4 modelview;
+mat4 model;
+mat4 view;
+mat4 projection;
+mat4 normalMat;
+
+vec3 eyePos = vec3(0,0,0 );
 vec3 eyeLook = vec3(0,0,-1);
 vec3 upDir = vec3(0,1,0);
 Camera cam( eyePos, eyeLook, upDir );
 
 float FOV = 60.0f;
-float zNear = 0.1f;
-float zFar = 100.0f;
+float zNear = 0.01f;
+float zFar = 10.0f;
 float aspect;
 
-//Shader programs
-shader::ShaderProgram renderVoxelShader;  //Scene-displaying shader program
-shader::ShaderProgram voxelizeShader; //Scene-voxelization shader program
-shader::ShaderProgram voxelTo3DTexShader; //shader program that converts voxel fragment list to 3D texture
+//lighting
+Light light1;
 
+
+//Shader programs-rendering
+shader::ShaderProgram renderVoxelShader;  //Scene-displaying shader program
+
+//Shader programs-SVO construction
+shader::ShaderProgram voxelizeShader; //Scene-voxelization shader program
 shader::ComputeShader nodeFlagShader;
 shader::ComputeShader nodeAllocShader;
 shader::ComputeShader nodeInitShader;
 
 shader::ComputeShader octreeTo3DtexShader;
 
-//OpenGL buffer objects
+//Shader programs-deferred shading
+shader::ShaderProgram passShader;
+shader::ShaderProgram deferredShader;
+
+//OpenGL buffer objects for loaded mesh
 GLuint vbo[10] = {0}; 
 GLuint nbo[10] = {0};
+GLuint tbo[10] = {0};
 GLuint ibo[10] = {0};
 GLuint vao[10] = {0};
 
+const int QUAD = 8;
+const int VOXEL3DTEX = 9;
+
+
 //voxel dimension
-int voxelDim = 8;
-int octreeLevel =3;
+int voxelDim = 128;
+int octreeLevel = 7;
 unsigned int numVoxelFrag = 0;
 
 //voxel-creation rlated buffers
@@ -67,9 +85,43 @@ GLuint atomicBuffer = 0;
 GLuint octreeNodeTex = 0;
 GLuint octreeNodeTbo = 0;
 
+//Textures for deferred shading
+GLuint depthFBTex = 0;
+GLuint normalFBTex = 0;
+GLuint positionFBTex = 0;
+GLuint colorFBTex = 0;
+GLuint postFBTex = 0;
+
+//Textures for shadowmaping
+GLuint shadowmapTex = 0;
+
+//Framebuffer objects
+GLuint FBO[2] = {0,0}; //
+
+enum RenderMode render_mode = RENDERSCENE; 
+enum Display display_type = DISPLAY_NORMAL; 
+
 void glut_display()
 {
-    renderVoxel();
+    //if( render_mode == RENDERVOXEL )
+        
+    //else if( render_mode ==  RENDERSCENE )
+    
+
+    if( render_mode == RENDERSCENEVOXEL )
+    {//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+        renderScene(); 
+        //renderVoxel();
+    }
+    else if( render_mode == RENDERSCENE )
+    {
+        renderScene();
+    }
+    else if( render_mode == RENDERVOXEL )
+    {   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+        renderScene();
+    }
+    glutSwapBuffers();
 }
 
 void glut_idle()
@@ -84,6 +136,14 @@ void glut_reshape( int w, int h )
 
     g_width = w;
     g_height = h;
+    glViewport( 0, 0, w, h );
+    glBindFramebuffer(GL_FRAMEBUFFER,0);
+
+    if (FBO[0] != 0 || depthFBTex != 0 || normalFBTex != 0 ) {
+        freeFBO();
+    }
+  
+    initFBO(w,h);
 
     projection = glm::perspective( FOV, (float)w/(float)h, zNear, zFar );
     //projection = glm::ortho( -1.0f, 1.0f, -1.0f, 1.0f, zNear, zFar );
@@ -135,61 +195,60 @@ void glut_keyboard( unsigned char key, int x, int y )
             exit(0.0);
             break;
         case '1':
-            voxelDim = 256;
-            createPointCube(voxelDim);
-            buildVoxelList();
+            render_mode = RENDERSCENE;
             break;
         case '2':
-            voxelDim = 128;
-            createPointCube(voxelDim);
-            buildVoxelList();
+            render_mode = RENDERSCENEVOXEL;
             break;
         case '3':
-            voxelDim = 64;
-            createPointCube(voxelDim);
-            buildVoxelList();
+
             break;
         case ('w'):
-            tz = -0.1;
+            tz = -0.01;
             break;
         case ('s'):
-            tz = 0.1;
+            tz = 0.01;
             break;
         case ('d'):
-            tx = -0.1;
+            tx = -0.01;
             break;
         case ('a'):
-            tx = 0.1;
+            tx = 0.01;
             break;
         case ('q'):
-            ty = 0.1;
+            ty = 0.01;
             break;
         case ('z'):
-            ty = -0.1;
+            ty = -0.01;
+            break;
+        case 'r':
+            initShader();
             break;
    
     }
 
     if (abs(tx) > 0 ||  abs(tz) > 0 || abs(ty) > 0) {
         cam.adjust(0,0,0,tx,ty,tz);
+       
     }
 }
 
 void renderVoxel()
 {
-    glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+    //glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
     glEnable( GL_DEPTH_TEST );
     glEnable( GL_CULL_FACE );
     glCullFace( GL_BACK );
     
     modelview = cam.get_view();
-    normalMat = transpose( inverse( mat3( modelview ) ) );
+    normalMat = transpose( inverse( modelview  ) );
 
     renderVoxelShader.use();
     renderVoxelShader.setParameter( shader::mat4x4, (void*)&modelview[0][0], "u_ModelView" );
     renderVoxelShader.setParameter( shader::mat4x4, (void*)&projection[0][0], "u_Proj" );
     renderVoxelShader.setParameter( shader::mat3x3, (void*)&normalMat[0][0], "u_Normal" );
-    float halfDim = 0.5f/voxelDim;
+    renderVoxelShader.setParameter( shader::i1, (void*)&voxelDim, "u_voxelDim" );
+    float halfDim = 1.0f/voxelDim;
     renderVoxelShader.setParameter( shader::f1, (void*)&(halfDim), "u_halfDim" );
 
     glActiveTexture(GL_TEXTURE0);
@@ -199,29 +258,295 @@ void renderVoxel()
 
 
     int numModel = g_meshloader.getModelCount();
-
-    glBindBuffer( GL_ARRAY_BUFFER, vbo[9] );
-    glBindVertexArray( vao[0] );
-    glVertexAttribPointer( 0, 3, GL_FLOAT, GL_FALSE, 0, (GLubyte*)NULL );
-    glEnableVertexAttribArray(0);
+    //glBindBuffer( GL_ARRAY_BUFFER, vbo[VOXEL3DTEX] );
+    glBindVertexArray( vao[VOXEL3DTEX] );
+    //glVertexAttribPointer( 0, 4, GL_UNSIGNED_INT_2_10_10_10_REV, GL_TRUE, 0, (GLubyte*)NULL );
+    //glEnableVertexAttribArray(0);
 
     glDrawArrays( GL_POINTS, 0, voxelDim * voxelDim * voxelDim );
-    glutSwapBuffers();
+    
 
     glBindTexture(GL_TEXTURE_3D, 0 );
-    glBindBuffer( GL_ARRAY_BUFFER, 0 );
+    //glBindBuffer( GL_ARRAY_BUFFER, 0 );
+    glBindVertexArray( 0 );
     renderVoxelShader.unuse();
 }
 
 void renderScene()
 {
+    bindFBO(0);
     glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
     glEnable( GL_DEPTH_TEST );
+    glDepthFunc( GL_LESS );
     glEnable( GL_CULL_FACE );
     glCullFace( GL_BACK );
+    glEnable(GL_TEXTURE_2D);
 
+    //PASS 1: render scene attributes to textures
+    view = cam.get_view();
+    model = mat4(1.0);
     modelview = cam.get_view();
-    normalMat = transpose( inverse( mat3( modelview ) ) );
+    normalMat = transpose( inverse( modelview ) );
+
+    vec4 lightPos = modelview * light1.initialPos;
+    passShader.use();
+    passShader.setParameter( shader::f1, (void*)&zFar, "u_Far" );
+    passShader.setParameter( shader::f1, (void*)&zNear, "u_Near" );
+    passShader.setParameter( shader::mat4x4, (void*)&model[0][0], "u_Model" );
+    passShader.setParameter( shader::mat4x4, (void*)&view[0][0], "u_View" );
+    passShader.setParameter( shader::mat4x4, (void*)&projection[0][0], "u_Persp" );
+    passShader.setParameter( shader::mat4x4, (void*)&normalMat[0][0], "u_InvTrans" );
+
+    int bTextured;
+    int numModel = g_meshloader.getModelCount();
+    for( int i = 0; i < numModel; ++i )
+    {
+        glBindVertexArray( vao[i] );
+        const ObjModel* model = g_meshloader.getModel(i);
+
+         glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, ibo[i] );
+        for( int i = 0; i < model->numGroup; ++i )
+        {
+            model->groups[i].shininess = 50;
+            passShader.setParameter( shader::fv3, &model->groups[i].kd, "u_Color" );
+            passShader.setParameter( shader::f1, &model->groups[i].shininess, "u_shininess" );
+            if( model->groups[i].texId > 0 )
+            {
+                glActiveTexture(GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, model->groups[i].texId );
+                passShader.setTexParameter( 0, "u_colorTex" );
+                bTextured = 1;
+            }
+            else
+                bTextured = 0;
+            passShader.setParameter( shader::i1, &bTextured, "u_bTextured" );
+
+            if( model->groups[i].bumpTexId > 0 )
+            {
+                glActiveTexture(GL_TEXTURE1);
+                glBindTexture(GL_TEXTURE_2D, model->groups[i].bumpTexId );
+                passShader.setTexParameter( 1, "u_bumpTex" );
+                bTextured = 1;
+            }
+            else
+                bTextured = 0;
+            passShader.setParameter( shader::i1, &bTextured, "u_bBump" );
+
+            glDrawElements( GL_TRIANGLES, 3*model->groups[i].numTri , GL_UNSIGNED_INT, (void*)model->groups[i].ibo_offset );
+            
+        }
+
+        //render the light bulb
+
+        if( render_mode == RENDERSCENEVOXEL )
+            renderVoxel();
+        //glDrawElements( GL_TRIANGLES, model->numIdx, GL_UNSIGNED_INT, (void*)0 );
+    }
+
+    //PASS 2: shadow map generation
+
+
+    //PASS 3: shading
+    deferredShader.use();
+
+    glDisable(GL_DEPTH_TEST);
+
+    glBindFramebuffer( GL_FRAMEBUFFER, 0);
+   
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glEnable(GL_TEXTURE_2D);
+
+    mat4 persp = perspective(45.0f,(float)g_width/(float)g_height,zNear,zFar);
+    vec4 test(-2,0,10,1);
+    vec4 testp = persp * test;
+    vec4 testh = testp / testp.w;
+    vec2 coords = vec2(testh.x, testh.y) / 2.0f + 0.5f;
+
+   
+    deferredShader.setParameter( shader::i1, &g_height, "u_ScreenHeight" );
+    deferredShader.setParameter( shader::i1, &g_width, "u_ScreenWidth" );
+    deferredShader.setParameter( shader::f1, &zFar, "u_Far" );
+    deferredShader.setParameter( shader::f1, &zNear, "u_Near" );
+    deferredShader.setParameter( shader::mat4x4, &persp[0][0], "u_Persp" );
+    deferredShader.setParameter( shader::i1, &display_type, "u_DisplayType" );
+
+    eyePos = cam.get_pos();
+    deferredShader.setParameter( shader::fv4, &light1.pos[0], "u_Light" );
+    deferredShader.setParameter( shader::fv3, &light1.color[0], "u_LightColor" );
+    deferredShader.setParameter( shader::fv3, &eyePos[0], "u_eyePos" );
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, depthFBTex);
+    deferredShader.setTexParameter( 0, "u_Depthtex" );
+
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, normalFBTex);
+    deferredShader.setTexParameter( 1, "u_Normaltex" );
+
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, positionFBTex);
+    deferredShader.setTexParameter( 2, "u_Positiontex" );
+
+    glActiveTexture(GL_TEXTURE3);
+    glBindTexture(GL_TEXTURE_2D, colorFBTex);
+    deferredShader.setTexParameter( 3, "u_Colortex" );
+
+    //Draw the screen space quad
+    glBindVertexArray( vao[QUAD] );
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo[QUAD] );
+
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT,0);
+
+    glBindVertexArray(0);
+    glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 );
+
+    glEnable(GL_DEPTH_TEST);
+
+    
+}
+
+void renderShadowMap( Light &light )
+{
+    glBindFramebuffer( GL_FRAMEBUFFER, FBO[1] );
+    glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+
+    mat4 depthProj = glm::ortho<float>(-10.0f, 10.0f, -10.0f, 10.0f );
+    mat4 depthView = glm::lookAt( vec3(light.pos), vec3(0,0,0), vec3( 0, 0, 1 ) );
+    mat4 depthModel = mat4(1.0);
+    mat4 depthMVP = depthProj * depthView * depthModel;
+
+
+    glBindFramebuffer( GL_FRAMEBUFFER, FBO[1] );
+}
+
+void initFBO( int w, int h )
+{
+    GLenum FBOstatus;
+    GLenum err;
+
+    glActiveTexture(GL_TEXTURE9);
+
+    glGenTextures(1, &depthFBTex);
+    glGenTextures(1, &normalFBTex);
+    glGenTextures(1, &positionFBTex);
+    glGenTextures(1, &colorFBTex);
+
+    //Set up depth FBO
+    depthFBTex = gen2DTexture( w, h, GL_DEPTH_COMPONENT32, GL_DEPTH_COMPONENT, GL_FLOAT );
+
+    //Set up normal FBO
+    normalFBTex = gen2DTexture( w, h, GL_RGBA32F, GL_RGBA, GL_FLOAT );
+
+    //Set up position FBO
+    positionFBTex = gen2DTexture( w, h, GL_RGBA32F, GL_RGBA, GL_FLOAT );
+
+    //Set up color FBO
+    colorFBTex = gen2DTexture( w, h, GL_RGBA32F, GL_RGBA, GL_FLOAT );
+
+    // create a framebuffer object
+    glGenFramebuffers(1, &FBO[0]);
+    glBindFramebuffer(GL_FRAMEBUFFER, FBO[0]);
+
+    // Instruct openGL that we won't bind a color texture with the currently bound FBO
+    glReadBuffer(GL_NONE);
+    //GLint normal_loc = glGetFragDataLocation(pass_prog,"out_Normal");
+    //GLint position_loc = glGetFragDataLocation(pass_prog,"out_Position");
+    //GLint color_loc = glGetFragDataLocation(pass_prog,"out_Color");
+
+    GLenum draws [NUM_RENDERTARGET];
+    draws[0] = GL_COLOR_ATTACHMENT0;
+    draws[1] = GL_COLOR_ATTACHMENT1;
+    draws[2] = GL_COLOR_ATTACHMENT2;
+
+    glDrawBuffers(NUM_RENDERTARGET, draws);
+
+    // attach the texture to FBO depth attachment point
+    glBindTexture(GL_TEXTURE_2D, depthFBTex);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthFBTex, 0);
+
+    glBindTexture(GL_TEXTURE_2D, normalFBTex);    
+    glFramebufferTexture(GL_FRAMEBUFFER, draws[0], normalFBTex, 0);
+
+    glBindTexture(GL_TEXTURE_2D, positionFBTex);    
+    glFramebufferTexture(GL_FRAMEBUFFER, draws[1], positionFBTex, 0);
+
+    glBindTexture(GL_TEXTURE_2D, colorFBTex);    
+    glFramebufferTexture(GL_FRAMEBUFFER, draws[2], colorFBTex, 0);
+
+    
+    // check FBO status
+    FBOstatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    if(FBOstatus != GL_FRAMEBUFFER_COMPLETE) {
+        printf("GL_FRAMEBUFFER_COMPLETE failed, CANNOT use FBO[0]\n");
+        checkFramebufferStatus(FBOstatus);
+    }
+
+   
+    //Shadow map buffers
+    glGenTextures(1, &shadowmapTex );
+  
+    //Set up shadow map FB texture
+    glBindTexture(GL_TEXTURE_2D, shadowmapTex );
+    glTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32 , 1024, 1024, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0 );
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+    
+
+    // create a framebuffer object for shadow mapping
+    glGenFramebuffers(1, &FBO[1]);
+    glBindFramebuffer(GL_FRAMEBUFFER, FBO[1]);
+
+    glFramebufferTexture( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, shadowmapTex, 0 );
+    glDrawBuffer( GL_NONE ); //Disable render
+
+
+    // check FBO status
+    FBOstatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    if(FBOstatus != GL_FRAMEBUFFER_COMPLETE) {
+        printf("GL_FRAMEBUFFER_COMPLETE failed, CANNOT use FBO[1]\n");
+        checkFramebufferStatus(FBOstatus);
+    }
+    err = glGetError();
+
+    // switch back to window-system-provided framebuffer
+    glClear( GL_DEPTH_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+void freeFBO() 
+{
+    glDeleteTextures(1,&depthFBTex);
+    glDeleteTextures(1,&normalFBTex);
+    glDeleteTextures(1,&positionFBTex);
+    glDeleteTextures(1,&colorFBTex);
+    //glDeleteTextures(1,&postFBTex);
+    glDeleteFramebuffers(1,&FBO[0]);
+    glDeleteFramebuffers(1,&FBO[1]);
+}
+
+void bindFBO(int buf)
+{
+    glDisable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D,0); //Bad mojo to unbind the framebuffer using the texture
+    glBindFramebuffer(GL_FRAMEBUFFER, FBO[buf]);
+    glClear(GL_DEPTH_BUFFER_BIT);
+    //glColorMask(false,false,false,false);
+    glEnable(GL_DEPTH_TEST);
+}
+
+void setTextures() 
+{
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D,0); 
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    //glColorMask(true,true,true,true);
+    glDisable(GL_DEPTH_TEST);
+    glClear(GL_COLOR_BUFFER_BIT);
 }
 
 void initShader()
@@ -236,6 +561,8 @@ void initShader()
     nodeAllocShader.init( "shader/nodeAlloc.com.glsl" );
     nodeInitShader.init( "shader/nodeInit.com.glsl" );
 
+    passShader.init( "shader/pass.vert.glsl", "shader/pass.frag.glsl" );
+    deferredShader.init( "shader/shade.vert.glsl", "shader/diagnostic.frag.glsl" );
 
 }
 
@@ -245,11 +572,32 @@ void initVertexData()
     int numModel = g_meshloader.getModelCount();
     for( int i = 0; i < numModel; ++i )
     {
+        glGenVertexArrays( 1, &vao[i] );
+        glBindVertexArray( vao[i] );
         const ObjModel* model = g_meshloader.getModel(i);
 
         glGenBuffers( 1, &vbo[i] );
         glBindBuffer( GL_ARRAY_BUFFER, vbo[i] );
         glBufferData( GL_ARRAY_BUFFER, sizeof(float) * 3 * model->numVert, model->vbo, GL_STATIC_DRAW  );
+        glVertexAttribPointer( 0, 3, GL_FLOAT, GL_FALSE, 0, 0 );
+        glEnableVertexAttribArray( 0 );
+
+        if( model->numNrml > 0 )
+        {
+            glGenBuffers( 1, &nbo[i] );
+            glBindBuffer( GL_ARRAY_BUFFER, nbo[i] );
+            glBufferData( GL_ARRAY_BUFFER, sizeof(float) * 3 * model->numVert, model->nbo, GL_STATIC_DRAW  );
+            glVertexAttribPointer( 1, 3, GL_FLOAT, GL_FALSE, 0, 0 );
+            glEnableVertexAttribArray( 1 );
+        }
+        if( model->numTxcoord > 0 )
+        {
+            glGenBuffers( 1, &tbo[i] );
+            glBindBuffer( GL_ARRAY_BUFFER, tbo[i] );
+            glBufferData( GL_ARRAY_BUFFER, sizeof(float) * 2 * model->numVert, model->tbo, GL_STATIC_DRAW  );
+            glVertexAttribPointer( 2, 2, GL_FLOAT, GL_FALSE, 0, 0 );
+            glEnableVertexAttribArray( 2 );
+        }
 
         glGenBuffers( 1, &ibo[i] );
         glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, ibo[i] );
@@ -257,12 +605,48 @@ void initVertexData()
 
         glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 );
         glBindBuffer( GL_ARRAY_BUFFER,0 );
+        glBindVertexArray(0);
+
+        //Upload texture to GPU 
+        for( int i = 0; i < model->numGroup; ++i )
+        {
+            if( model->groups[i].tex_filename.length() > 0 )
+                model->groups[i].texId = loadTexturFromFile( model->groups[i].tex_filename.c_str(), GL_RGB8, GL_BGR );
+            else
+                model->groups[i].texId = 0;
+            if( model->groups[i].bump_filename.length() > 0 )
+                model->groups[i].bumpTexId = loadTexturFromFile( model->groups[i].bump_filename.c_str(), GL_RGB8, GL_BGR );
+            else
+                model->groups[i].bumpTexId = 0;
+        }
     }
+    
 
     //Create a cube comprised of points, for voxel visualization
     createPointCube( voxelDim );
 
-    glGenVertexArrays( 1, &vao[0] );
+    //create a screen-size quad for deferred shading
+    createScreenQuad();
+
+    
+}
+
+unsigned int gen2DTexture( int w, int h, GLenum internalFormat,  GLenum format, GLenum type )
+{
+    GLuint texId;
+    glGenTextures(1, &texId);
+    glBindTexture( GL_TEXTURE_2D, texId );
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+    glTexParameteri(GL_TEXTURE_2D, GL_DEPTH_TEXTURE_MODE, GL_INTENSITY);
+
+    glTexImage2D( GL_TEXTURE_2D, 0, internalFormat, w, h, 0, format, type, 0);
+
+    glBindTexture( GL_TEXTURE_2D, 0 );
+    return texId;
 }
 
 unsigned int gen3DTexture( int dim )
@@ -278,9 +662,10 @@ unsigned int gen3DTexture( int dim )
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAX_LEVEL, 0);
     glTexParameteri(GL_TEXTURE_3D,  GL_TEXTURE_MIN_FILTER, GL_NEAREST);  
     glTexParameteri(GL_TEXTURE_3D,  GL_TEXTURE_MAG_FILTER, GL_NEAREST); 
-    glTexImage3D( GL_TEXTURE_3D, 0, GL_R32F, dim, dim, dim, 0, GL_RED, GL_FLOAT, data );
+    glTexImage3D( GL_TEXTURE_3D, 0, GL_R8, dim, dim, dim, 0, GL_RED, GL_UNSIGNED_BYTE, data );
     glBindTexture( GL_TEXTURE_3D, 0 );
     GLenum err = glGetError();
+    cout<<glewGetErrorString(err)<<" "<<err<<endl;
     delete [] data;
     return texId;
 }
@@ -324,10 +709,50 @@ unsigned int genAtomicBuffer( int num, int idx )
     return buffer;
 }
 
+//create a screen-size quad
+void createScreenQuad()
+{
+    GLenum err;
+    vertex2_t verts [] = { {vec3(-1,1,0),vec2(0,1)},
+        {vec3(-1,-1,0),vec2(0,0)},
+        {vec3(1,-1,0),vec2(1,0)},
+        {vec3(1,1,0),vec2(1,1)}};
+
+    unsigned short indices[] = { 0,1,2,0,2,3};
+
+    glGenVertexArrays( 1, &vao[QUAD] );
+    glBindVertexArray( vao[QUAD] );
+
+    //Allocate vbos for data
+    glGenBuffers(1,&vbo[QUAD]);
+    glGenBuffers(1,&ibo[QUAD]);
+
+    //Upload vertex data
+    glBindBuffer(GL_ARRAY_BUFFER, vbo[QUAD]);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(verts), verts, GL_STATIC_DRAW);
+    //Use of strided data, Array of Structures instead of Structures of Arrays
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE,sizeof(vertex2_t),0);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE,sizeof(vertex2_t),(void*)sizeof(vec3));
+    glEnableVertexAttribArray(0);
+    glEnableVertexAttribArray(1);
+
+    //indices
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo[QUAD]);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6*sizeof(GLushort), indices, GL_STATIC_DRAW);
+
+    //Unplug Vertex Array
+    glBindVertexArray(0);
+
+    err = glGetError();
+}
+
 //create a cube
 void createPointCube( int dim )
 {
-    float* data = new float[ 3 * dim * dim * dim ];
+    GLenum err;
+    //GLfloat* data = new GLfloat[ 3 * dim * dim * dim ];
+    GLuint* data = new GLuint[dim*dim*dim];
+    memset( data, 0, sizeof(GLuint) * dim * dim * dim );
     int yoffset, offset;
     for( int y = 0; y < dim; ++y )
     {
@@ -337,22 +762,38 @@ void createPointCube( int dim )
             offset = yoffset + z*dim;
             for( int x = 0; x < dim; ++x )
             {
-                data[ 3*( offset + x ) ] = x / (float)dim;
-                data[ 3*( offset + x )+1 ] = y / (float)dim;
-                data[ 3*( offset + x )+2 ] = z / (float)dim;
+                //data[ 3*( offset + x ) ] = x /(float)voxelDim;
+                //data[ 3*( offset + x )+1 ] = y /(float)voxelDim ;
+                //data[ 3*( offset + x )+2 ] = z /(float)voxelDim ;
+
+                //Pack point cloud position in GL_UNSIGNED_INT_2_10_10_10_REV format
+                data[offset+x ] |= (1<<30);
+                data[ offset+x ] |= (x<<20);
+                data[ offset+x ] |= (y<<10);
+                data[ offset+x ] |= (z);
             }
         }
     }
 
-    if( vbo[9] ) 
-        glDeleteBuffers(1, &vbo[9] );
-    glGenBuffers( 1, &vbo[9] );
-    glBindBuffer( GL_ARRAY_BUFFER, vbo[9] );
-    glBufferData( GL_ARRAY_BUFFER, sizeof(float) * 3 * voxelDim * voxelDim * voxelDim, data, GL_STATIC_DRAW );
-    glBindBuffer( GL_ARRAY_BUFFER, 0 );
+    if( vbo[VOXEL3DTEX] ) 
+        glDeleteBuffers(1, &vbo[VOXEL3DTEX] );
+    glGenBuffers( 1, &vbo[VOXEL3DTEX] );
+    glBindBuffer( GL_ARRAY_BUFFER, vbo[VOXEL3DTEX] );
+    glBufferData( GL_ARRAY_BUFFER, sizeof(GLuint) *  voxelDim * voxelDim * voxelDim, data, GL_STATIC_DRAW );
+    
 
+    if( vao[VOXEL3DTEX] )
+        glDeleteVertexArrays( 1, &vao[VOXEL3DTEX] );
+    glGenVertexArrays( 1, &vao[VOXEL3DTEX] );
+    glBindVertexArray( vao[VOXEL3DTEX] );
+    glVertexAttribPointer( 0, 4 , GL_UNSIGNED_INT_2_10_10_10_REV , GL_FALSE, 0, 0 );
+    glEnableVertexAttribArray(0);
+
+    glBindVertexArray(0);
+    glBindBuffer( GL_ARRAY_BUFFER, 0 );
     delete [] data;
   
+    err = glGetError();
 }
 
 void voxelizeScene( int bStore )
@@ -464,6 +905,12 @@ void buildVoxelList()
    
 }
 
+void deleteVoxelList()
+{
+    glDeleteTextures( 1, &voxelPosTex );
+    glDeleteBuffers( 1, &voxelPosTbo );
+}
+
 void buildSVO()
 { 
     GLenum err;
@@ -480,7 +927,7 @@ void buildSVO()
         nTmp *= 8;
         totalNode += nTmp;
     }
-
+    totalNode /= 10;
     //Create an octree node pool with one-eighth maximum node number
     genLinearBuffer( sizeof(GLuint)*totalNode , GL_R32UI, &octreeNodeTex, &octreeNodeTbo );
 
@@ -520,15 +967,15 @@ void buildSVO()
         glMemoryBarrier( GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_ATOMIC_COUNTER_BARRIER_BIT );
         
         //Get the number of node tiles to allocate in the next level
-        GLuint titleAllocated;
+        GLuint tileAllocated;
         GLuint reset = 0;
         glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, allocCounter );
-        glGetBufferSubData( GL_ATOMIC_COUNTER_BUFFER, 0, sizeof(GLuint), &titleAllocated );
+        glGetBufferSubData( GL_ATOMIC_COUNTER_BUFFER, 0, sizeof(GLuint), &tileAllocated );
         glBufferSubData( GL_ATOMIC_COUNTER_BUFFER, 0, sizeof(GLuint), &reset ); //reset counter to zero
         glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, 0 );
 
         //node tile initialization
-        int nodeAllocated = titleAllocated * 8;
+        int nodeAllocated = tileAllocated * 8;
         nodeInitShader.use();
         nodeInitShader.setParameter( shader::i1, (void*)&nodeAllocated, "u_num" );
         nodeInitShader.setParameter( shader::i1, (void*)&allocOffset, "u_allocStart" );
@@ -542,10 +989,19 @@ void buildSVO()
         allocList.push_back( nodeAllocated ); //titleAllocated * 8 is the number of threads
                                               //we want to launch in the next level
         nodeOffset += allocList[i]; //nodeOffset is the starting node in the next level
-        allocOffset += titleAllocated * 8; //allocOffset is the starting address of remaining free space
+        allocOffset += tileAllocated * 8; //allocOffset is the starting address of remaining free space
         err = glGetError();
 
     }
+        //node flag
+        nodeFlagShader.use();
+        nodeFlagShader.setParameter( shader::i1, (void*)&numVoxelFrag, "u_numVoxelFrag" );
+        nodeFlagShader.setParameter( shader::i1, (void*)&octreeLevel, "u_level" );
+        nodeFlagShader.setParameter( shader::i1, (void*)&voxelDim, "u_voxelDim" );
+        glBindImageTexture( 0, voxelPosTex, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGB10_A2UI );
+        glBindImageTexture( 1, octreeNodeTex, 0, GL_FALSE, 0, GL_READ_WRITE, GL_R32UI );
+        glDispatchCompute( groupDim, 1, 1 );
+        glMemoryBarrier( GL_SHADER_IMAGE_ACCESS_BARRIER_BIT );
 }
 
 void octreeTo3Dtex()
@@ -562,13 +1018,19 @@ void octreeTo3Dtex()
     octreeTo3DtexShader.setParameter( shader::i1, (void*)&octreeLevel, "u_octreeLevel" );
     octreeTo3DtexShader.setParameter( shader::i1, (void*)&voxelDim, "u_voxelDim" );
     octreeTo3DtexShader.setParameter( shader::i1, (void*)&numVoxelFrag, "u_numVoxelFrag" );
-    glBindImageTexture( 0, voxelTex, 0, GL_TRUE, voxelDim, GL_READ_WRITE, GL_R32F );
+    glBindImageTexture( 0, voxelTex, 0, GL_TRUE, voxelDim, GL_WRITE_ONLY, GL_R8 );
     glBindImageTexture( 1, octreeNodeTex, 0, GL_FALSE, 0, GL_READ_ONLY, GL_R32UI );
     glBindImageTexture( 2, voxelPosTex, 0,  GL_FALSE, 0, GL_READ_ONLY, GL_RGB10_A2UI ); 
-    int computeDim = voxelDim / 8;
+    int computeDim = (voxelDim+7) / 8;
     glDispatchCompute( computeDim, computeDim, computeDim );
     //int computeDim = ( numVoxelFrag + 63 ) /64;
     //glDispatchCompute( computeDim, 1, 1 );
     glMemoryBarrier( GL_SHADER_IMAGE_ACCESS_BARRIER_BIT );
 
+}
+
+void initLight()
+{
+    light1.pos = light1.initialPos = vec4( 0, 1, 0, 0 );
+    light1.color = vec3( 1, 1, 1 );
 }

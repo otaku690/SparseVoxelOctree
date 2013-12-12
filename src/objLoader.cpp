@@ -43,10 +43,10 @@ int objLoader::load( string &filename )
     newMesh->tibo = new int[ newMesh->numIdx ];
 
     if( newMesh->numNrml > 0 )
-        newMesh->nbo = new float[ newMesh->numNrml * 3 ];
+        newMesh->nbo = new float[ newMesh->numVert * 3 ];
 
     if( newMesh->numTxcoord > 0 )
-        newMesh->tbo = new float[ newMesh->numTxcoord * 2];
+        newMesh->tbo = new float[ newMesh->numVert * 2];
 
     GLMgroup* group = model->groups;
    
@@ -70,18 +70,18 @@ int objLoader::load( string &filename )
             newMesh->groups[gid].shininess = mtl->shininess;
             if( mtl->texture_name != NULL )
             {
-                newMesh->groups[gid].sampler2D = glmReadPPM( mtl->texture_name, &newMesh->groups[gid].sampler_w, &newMesh->groups[gid].sampler_h );
-                newMesh->groups[gid].sampler_id = tid;
-                tid++;
+                //newMesh->groups[gid].sampler2D = glmReadPPM( mtl->texture_name, &newMesh->groups[gid].sampler_w, &newMesh->groups[gid].sampler_h );
+                //newMesh->groups[gid].sampler_id = tid;
+                //tid++;
+                newMesh->groups[gid].tex_filename = mtl->texture_name;
             }
-            else
+            if( mtl->bumpmap_name != NULL )
             {
-                newMesh->groups[gid].sampler_id = -1;
-                newMesh->groups[gid].sampler2D = NULL;
+                newMesh->groups[gid].bump_filename = mtl->bumpmap_name;
             }
         }
         
-        newMesh->groups[gid].ibo_offset = 3*offset;
+        newMesh->groups[gid].ibo_offset = 3*offset*sizeof(float);
         newMesh->groups[gid].numTri = group->numtriangles;
        
         gid++;
@@ -104,6 +104,10 @@ int objLoader::load( string &filename )
                 newMesh->nibo[3*offset] = tri->nindices[0] - 1;
                 newMesh->nibo[3*offset+1] = tri->nindices[1] - 1;
                 newMesh->nibo[3*offset+2] = tri->nindices[2] - 1;
+
+                memcpy( &newMesh->nbo[ 3*(tri->vindices[0]-1) ], &model->normals[3*tri->nindices[0]], sizeof(float)*3 );
+                memcpy( &newMesh->nbo[ 3*(tri->vindices[1]-1) ], &model->normals[3*tri->nindices[1]], sizeof(float)*3 );
+                memcpy( &newMesh->nbo[ 3*(tri->vindices[2]-1) ], &model->normals[3*tri->nindices[2]], sizeof(float)*3 );
             }
             //and index data of tex coords
             if( newMesh->numTxcoord )
@@ -111,6 +115,9 @@ int objLoader::load( string &filename )
                 newMesh->tibo[3*offset] = tri->tindices[0] - 1;
                 newMesh->tibo[3*offset+1] = tri->tindices[1] - 1;
                 newMesh->tibo[3*offset+2] = tri->tindices[2] - 1;
+                memcpy( &newMesh->tbo[ 2*(tri->vindices[0]-1) ], &model->texcoords[2*tri->tindices[0]], sizeof(float)*2 );
+                memcpy( &newMesh->tbo[ 2*(tri->vindices[1]-1) ], &model->texcoords[2*tri->tindices[1]], sizeof(float)*2 );
+                memcpy( &newMesh->tbo[ 2*(tri->vindices[2]-1) ], &model->texcoords[2*tri->tindices[2]], sizeof(float)*2 );
             }
             offset += 1;
         }
@@ -120,28 +127,28 @@ int objLoader::load( string &filename )
 
     memcpy( &newMesh->vbo[0], &model->vertices[3], sizeof(float)*3* newMesh->numVert );
 
-    if( newMesh->numNrml > 0 )
-    {
-        memcpy( &newMesh->nbo[0], &model->normals[3], sizeof(float)*3* newMesh->numNrml );
-    }
-    else
-    {
-        newMesh->numNrml = 1;
-        newMesh->nbo = new float[3];
-        newMesh->nbo[0] = newMesh->nbo[1] = newMesh->nbo[2] = 0.0f;
-        memset( &newMesh->nibo[0], 0, sizeof( int ) * newMesh->numIdx );
-    }
+    //if( newMesh->numNrml > 0 )
+    //{
+    //    memcpy( &newMesh->nbo[0], &model->normals[3], sizeof(float)*3* newMesh->numNrml );
+    //}
+    //if( newMesh->numNrml == 0 )
+    //{
+        //newMesh->numNrml = 1;
+        //newMesh->nbo = new float[3];
+        //newMesh->nbo[0] = newMesh->nbo[1] = newMesh->nbo[2] = 0.0f;
+        //memset( &newMesh->nibo[0], 0, sizeof( int ) * newMesh->numIdx );
+    //}
 
 
-    if( newMesh->numTxcoord > 0 )
-        memcpy( &newMesh->tbo[0], &model->texcoords[2], sizeof(float)*2* newMesh->numTxcoord );
-    else
-    {
-        newMesh->numTxcoord = 1;
-        newMesh->tbo = new float[2];
-        newMesh->tbo[0] = newMesh->tbo[1] = 0.0f;
-        memset( &newMesh->tibo[0], 0, sizeof( int ) * newMesh->numIdx );
-    }
+    //if( newMesh->numTxcoord > 0 )
+    //    memcpy( &newMesh->tbo[0], &model->texcoords[2], sizeof(float)*2* newMesh->numTxcoord );
+    //else
+    //{
+    //    newMesh->numTxcoord = 1;
+    //    newMesh->tbo = new float[2];
+    //    newMesh->tbo[0] = newMesh->tbo[1] = 0.0f;
+    //    memset( &newMesh->tibo[0], 0, sizeof( int ) * newMesh->numIdx );
+    //}
 
 
     glmDelete( model );
@@ -185,6 +192,6 @@ ObjModel::ObjModel()
 
 ObjModel::~ObjModel()
 {
-    for( int i = 0; i < numGroup; ++i )
-        delete [] groups[i].sampler2D;
+    //for( int i = 0; i < numGroup; ++i )
+    //    delete [] groups[i].sampler2D;
 }

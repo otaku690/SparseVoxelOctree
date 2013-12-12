@@ -52,13 +52,13 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\..\3party\freeglut\include;..\..\3party\glew\include;..\..\3party\glm;..\..\3party;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\3party\freeglut\include;..\..\3party\glew\include;..\..\3party\glm;..\..\3party;..\..\3party\FreeImage;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>..\..\3party\freeglut\lib;..\..\3party\glew\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>freeglut.lib;glew32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\..\3party\freeglut\lib;..\..\3party\glew\lib;..\..\3party\FreeImage;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>freeglut.lib;glew32.lib;FreeImage.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -70,15 +70,15 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\..\3party\freeglut\include;..\..\3party\glew\include;..\..\3party\glm;..\..\3party;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\3party\freeglut\include;..\..\3party\glew\include;..\..\3party\glm;..\..\3party;..\..\3party\FreeImage;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>freeglut.lib;glew32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\3party\freeglut\lib;..\..\3party\glew\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>freeglut.lib;glew32.lib;FreeImage.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\..\3party\freeglut\lib;..\..\3party\glew\lib;..\..\3party\FreeImage;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -89,6 +89,7 @@
     <ClCompile Include="..\..\src\main.cpp" />
     <ClCompile Include="..\..\src\objLoader.cpp" />
     <ClCompile Include="..\..\src\shader.cpp" />
+    <ClCompile Include="..\..\src\util.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\3party\glm.h" />
@@ -97,16 +98,21 @@
     <ClInclude Include="..\..\src\glslUtility.h" />
     <ClInclude Include="..\..\src\objLoader.h" />
     <ClInclude Include="..\..\src\shader.h" />
+    <ClInclude Include="..\..\src\util.h" />
     <ClInclude Include="..\..\src\variables.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="shader\diagnostic.frag.glsl" />
     <None Include="shader\fill3Dtex.com.glsl" />
+    <None Include="shader\pass.frag.glsl" />
+    <None Include="shader\pass.vert.glsl" />
     <None Include="shader\renderVoxel.frag.glsl" />
     <None Include="shader\renderVoxel.geom.glsl" />
     <None Include="shader\renderVoxel.vert.glsl" />
     <None Include="shader\nodeAlloc.com.glsl" />
     <None Include="shader\nodeFlag.com.glsl" />
     <None Include="shader\nodeInit.com.glsl" />
+    <None Include="shader\shade.vert.glsl" />
     <None Include="shader\voxelize.frag.glsl" />
     <None Include="shader\voxelize.geom.glsl" />
     <None Include="shader\voxelize.vert.glsl" />

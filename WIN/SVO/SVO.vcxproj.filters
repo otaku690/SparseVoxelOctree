@@ -39,6 +39,9 @@
     <ClCompile Include="..\..\src\camera.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\util.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\variables.h">
@@ -60,6 +63,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\camera.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\util.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -92,6 +98,18 @@
       <Filter>Source Files\Shader</Filter>
     </None>
     <None Include="shader\renderVoxel.vert.glsl">
+      <Filter>Source Files\Shader</Filter>
+    </None>
+    <None Include="shader\pass.vert.glsl">
+      <Filter>Source Files\Shader</Filter>
+    </None>
+    <None Include="shader\pass.frag.glsl">
+      <Filter>Source Files\Shader</Filter>
+    </None>
+    <None Include="shader\diagnostic.frag.glsl">
+      <Filter>Source Files\Shader</Filter>
+    </None>
+    <None Include="shader\shade.vert.glsl">
       <Filter>Source Files\Shader</Filter>
     </None>
   </ItemGroup>

@@ -12,6 +12,7 @@
 #include "glRoutine.h"
 #include "objLoader.h"
 #include "variables.h"
+#include "FreeImage.h"
 
 //Eanble High Performance GPU on Optimus devices
 extern "C" {
@@ -49,6 +50,8 @@ void main( int argc, char* argv[] )
         return;
     }
 
+    FreeImage_Initialise();
+
     glutInit( &argc, argv );
     glutInitDisplayMode( GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH );
     glutInitContextVersion( 4, 3 );
@@ -79,10 +82,16 @@ void main( int argc, char* argv[] )
     glutMotionFunc( glut_motion );
 
     initShader();
+    initFBO(g_width, g_height);
     initVertexData(); 
     buildVoxelList(); //build a voxel fragment list
     buildSVO();       //build a sparse voxel octree
+    deleteVoxelList();
     octreeTo3Dtex();  //for visualization purpose
+
+    initLight();
+
     glutMainLoop();
 
+    FreeImage_DeInitialise();
 }

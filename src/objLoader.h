@@ -7,6 +7,7 @@
 
 #include <glm/glm.hpp> 
 #include <vector>
+#include <string>
 
 using namespace std;
 using namespace glm;
@@ -21,10 +22,14 @@ struct Group
     vec3 ka;
     vec3 em;
     float shininess;
-    unsigned char* sampler2D;
+    string tex_filename;
+    string bump_filename;
     int sampler_w;
     int sampler_h;
-    int sampler_id;
+    int bumpmap_w;
+    int bumpmap_h;
+    unsigned int texId;
+    unsigned int bumpTexId;
 };
 
 class ObjModel{

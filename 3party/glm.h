@@ -39,6 +39,8 @@ typedef struct _GLMmaterial
   GLfloat emmissive[4];			/* emmissive component */
   GLfloat shininess;			/* specular exponent */
   char *texture_name;
+  char *bumpmap_name;
+  char *mask_name;
 } GLMmaterial;
 
 /* GLMtriangle: Structure that defines a triangle in a model.

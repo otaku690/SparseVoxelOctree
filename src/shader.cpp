@@ -56,6 +56,8 @@ void ShaderProgram::unuse()
 
 void ShaderProgram::setParameter( shaderAttrib type, void* param, char* name )
 {
+    GLint loc  =  glGetUniformLocation( program, name );
+    int val = *((int*)param);
     switch( type )
     {
     case i1:
@@ -86,6 +88,16 @@ void ShaderProgram::setTexParameter( int idx, char* name )
 {
     int loc = glGetUniformLocation( program, name );
     glUniform1i( loc, idx );
+}
+
+void ShaderProgram::bindAttribLocation( unsigned int idx, char* name )
+{
+    glBindAttribLocation( program, idx, name );
+}
+
+void ShaderProgram::bindFragDataLocation( unsigned int idx, char* name )
+{
+    glBindFragDataLocation( program, idx, name );
 }
 
 ComputeShader::ComputeShader()
