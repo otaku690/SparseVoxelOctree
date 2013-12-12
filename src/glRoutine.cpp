@@ -82,14 +82,18 @@ const int VOXEL3DTEX = 9;
 
 
 //voxel dimension
-int voxelDim = 128;
-int octreeLevel = 7;
+int voxelDim = 256;
+int octreeLevel = 8;
 unsigned int numVoxelFrag = 0;
 
 //voxel-creation rlated buffers
 GLuint voxelTex = 0;   //3D texture
 GLuint voxelPosTex = 0;  //texture for voxel fragment list (position)
 GLuint voxelPosTbo = 0;  //texture buffer object for voxel fragment list (position)
+GLuint voxelKdTex = 0;  //texture for voxel fragment list (diffuse)
+GLuint voxelKdTbo = 0;  //texture buffer object for voxel fragment list (diffuse)
+GLuint voxelNrmlTex = 0;  //texture for voxel fragment list (normal)
+GLuint voxelNrmlTbo = 0;  //texture buffer object for voxel fragment list (normal)
 
 GLuint atomicBuffer = 0;
 
@@ -354,7 +358,7 @@ void renderScene()
 
    
     //PASS 2: shadow map generation
-    renderShadowMap( light1 );
+    //renderShadowMap( light1 );
 
     //PASS 3: shading
     deferredShader.use();
@@ -809,51 +813,52 @@ void createScreenQuad()
 }
 
 //create a cube
+// Don't need this anymore, instead we use gl_vertexID in vertex shader to index the 3D texture
 void createPointCube( int dim )
 {
     GLenum err;
     //GLfloat* data = new GLfloat[ 3 * dim * dim * dim ];
-    GLuint* data = new GLuint[dim*dim*dim];
-    memset( data, 0, sizeof(GLuint) * dim * dim * dim );
-    int yoffset, offset;
-    for( int y = 0; y < dim; ++y )
-    {
-        yoffset = y*dim*dim;
-        for( int z = 0; z < dim; ++z )
-        {
-            offset = yoffset + z*dim;
-            for( int x = 0; x < dim; ++x )
-            {
-                //data[ 3*( offset + x ) ] = x /(float)voxelDim;
-                //data[ 3*( offset + x )+1 ] = y /(float)voxelDim ;
-                //data[ 3*( offset + x )+2 ] = z /(float)voxelDim ;
+    //GLuint* data = new GLuint[dim*dim*dim];
+    //memset( data, 0, sizeof(GLuint) * dim * dim * dim );
+    //int yoffset, offset;
+    //for( int y = 0; y < dim; ++y )
+    //{
+    //    yoffset = y*dim*dim;
+    //    for( int z = 0; z < dim; ++z )
+    //    {
+    //        offset = yoffset + z*dim;
+    //        for( int x = 0; x < dim; ++x )
+    //        {
+    //            //data[ 3*( offset + x ) ] = x /(float)voxelDim;
+    //            //data[ 3*( offset + x )+1 ] = y /(float)voxelDim ;
+    //            //data[ 3*( offset + x )+2 ] = z /(float)voxelDim ;
 
-                //Pack point cloud position in GL_UNSIGNED_INT_2_10_10_10_REV format
-                data[offset+x ] |= (1<<30);
-                data[ offset+x ] |= (x<<20);
-                data[ offset+x ] |= (y<<10);
-                data[ offset+x ] |= (z);
-            }
-        }
-    }
+    //            //Pack point cloud position in GL_UNSIGNED_INT_2_10_10_10_REV format
+    //            data[offset+x ] |= (1<<30);
+    //            data[ offset+x ] |= (x<<20);
+    //            data[ offset+x ] |= (y<<10);
+    //            data[ offset+x ] |= (z);
+    //        }
+    //    }
+    //}
 
-    if( vbo[VOXEL3DTEX] ) 
-        glDeleteBuffers(1, &vbo[VOXEL3DTEX] );
-    glGenBuffers( 1, &vbo[VOXEL3DTEX] );
-    glBindBuffer( GL_ARRAY_BUFFER, vbo[VOXEL3DTEX] );
-    glBufferData( GL_ARRAY_BUFFER, sizeof(GLuint) *  voxelDim * voxelDim * voxelDim, data, GL_STATIC_DRAW );
+    //if( vbo[VOXEL3DTEX] ) 
+    //    glDeleteBuffers(1, &vbo[VOXEL3DTEX] );
+    //glGenBuffers( 1, &vbo[VOXEL3DTEX] );
+    //glBindBuffer( GL_ARRAY_BUFFER, vbo[VOXEL3DTEX] );
+    //glBufferData( GL_ARRAY_BUFFER, sizeof(GLuint) *  voxelDim * voxelDim * voxelDim, data, GL_STATIC_DRAW );
     
 
     if( vao[VOXEL3DTEX] )
         glDeleteVertexArrays( 1, &vao[VOXEL3DTEX] );
     glGenVertexArrays( 1, &vao[VOXEL3DTEX] );
     glBindVertexArray( vao[VOXEL3DTEX] );
-    glVertexAttribPointer( 0, 4 , GL_UNSIGNED_INT_2_10_10_10_REV , GL_FALSE, 0, 0 );
-    glEnableVertexAttribArray(0);
+    //glVertexAttribPointer( 0, 4 , GL_UNSIGNED_INT_2_10_10_10_REV , GL_FALSE, 0, 0 );
+    //glEnableVertexAttribArray(0);
 
     glBindVertexArray(0);
     glBindBuffer( GL_ARRAY_BUFFER, 0 );
-    delete [] data;
+    //delete [] data;
   
     err = glGetError();
 }
@@ -900,28 +905,49 @@ void voxelizeScene( int bStore )
     if( bStore == 1 )
     {
         glBindImageTexture( 0, voxelPosTex, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGB10_A2UI );
+        glBindImageTexture( 1, voxelKdTex, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA16F );
+        glBindImageTexture( 2, voxelNrmlTex, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA16F );
         voxelizeShader.setTexParameter( 0, "u_voxelPos" );
     }
 
+    int bTextured;
     int numModel = g_meshloader.getModelCount();
     for( int i = 0; i < numModel; ++i )
     {
-        const ObjModel* model = g_meshloader.getModel(i);
-        glBindBuffer( GL_ARRAY_BUFFER, vbo[i] );
-        
         glBindVertexArray( vao[i] );
-        
-        glVertexAttribPointer( 0, 3, GL_FLOAT, GL_FALSE, 0, (GLubyte*)NULL );
-       
-        glEnableVertexAttribArray(0);
-        
-        glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, ibo[i] );
-       
-        glDrawElements( GL_TRIANGLES, model->numIdx, GL_UNSIGNED_INT, (void*)0 );
-        
-        glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 );
-        glBindBuffer( GL_ARRAY_BUFFER, 0 );
-        
+        const ObjModel* model = g_meshloader.getModel(i);
+
+         glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, ibo[i] );
+        for( int i = 0; i < model->numGroup; ++i )
+        {
+            model->groups[i].shininess = 50;
+            voxelizeShader.setParameter( shader::fv3, &model->groups[i].kd, "u_Color" );
+            voxelizeShader.setParameter( shader::f1, &model->groups[i].shininess, "u_shininess" );
+            if( model->groups[i].texId > 0 )
+            {
+                glActiveTexture(GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, model->groups[i].texId );
+                voxelizeShader.setTexParameter( 0, "u_colorTex" );
+                bTextured = 1;
+            }
+            else
+                bTextured = 0;
+            voxelizeShader.setParameter( shader::i1, &bTextured, "u_bTextured" );
+
+            if( model->groups[i].bumpTexId > 0 )
+            {
+                glActiveTexture(GL_TEXTURE1);
+                glBindTexture(GL_TEXTURE_2D, model->groups[i].bumpTexId );
+                voxelizeShader.setTexParameter( 1, "u_bumpTex" );
+                bTextured = 1;
+            }
+            else
+                bTextured = 0;
+            voxelizeShader.setParameter( shader::i1, &bTextured, "u_bBump" );
+
+            glDrawElements( GL_TRIANGLES, 3*model->groups[i].numTri , GL_UNSIGNED_INT, (void*)model->groups[i].ibo_offset );
+            
+        }
     }
     
     glEnable( GL_CULL_FACE );
@@ -953,6 +979,8 @@ void buildVoxelList()
 
     //Create buffers for voxel fragment list
     genLinearBuffer( sizeof(GLuint) * numVoxelFrag, GL_R32UI, &voxelPosTex, &voxelPosTbo );
+    genLinearBuffer( sizeof(GLuint) * numVoxelFrag, GL_RGBA16F, &voxelKdTex, &voxelKdTbo ); 
+    genLinearBuffer( sizeof(GLuint) * numVoxelFrag, GL_RGBA16F, &voxelNrmlTex, &voxelNrmlTbo ); 
     
     //reset counter
     memset( count, 0, sizeof( GLuint ) );
@@ -1080,9 +1108,14 @@ void octreeTo3Dtex()
     octreeTo3DtexShader.setParameter( shader::i1, (void*)&octreeLevel, "u_octreeLevel" );
     octreeTo3DtexShader.setParameter( shader::i1, (void*)&voxelDim, "u_voxelDim" );
     octreeTo3DtexShader.setParameter( shader::i1, (void*)&numVoxelFrag, "u_numVoxelFrag" );
+
     glBindImageTexture( 0, voxelTex, 0, GL_TRUE, voxelDim, GL_WRITE_ONLY, GL_R8 );
+
     glBindImageTexture( 1, octreeNodeTex, 0, GL_FALSE, 0, GL_READ_ONLY, GL_R32UI );
-    glBindImageTexture( 2, voxelPosTex, 0,  GL_FALSE, 0, GL_READ_ONLY, GL_RGB10_A2UI ); 
+    glBindImageTexture( 2, voxelPosTex, 0,  GL_FALSE, 0, GL_READ_ONLY, GL_RGB10_A2UI );
+    glBindImageTexture( 3, voxelKdTex, 0,  GL_FALSE, 0, GL_READ_ONLY, GL_RGBA16F); 
+    glBindImageTexture( 4, voxelNrmlTex, 0,  GL_FALSE, 0, GL_READ_ONLY, GL_RGBA16F ); 
+
     int computeDim = (voxelDim+7) / 8;
     glDispatchCompute( computeDim, computeDim, computeDim );
     //int computeDim = ( numVoxelFrag + 63 ) /64;

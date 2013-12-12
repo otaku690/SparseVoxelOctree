@@ -3,9 +3,13 @@
 // University of Pennsylvania CIS565 final project
 // copyright (c) 2013 Cheng-Tso Lin  
 # version 430
+#define USE_SPARSE_OCTREE 1
 
+#if USE_SPARSE_OCTREE == 1
 layout (local_size_x = 8, local_size_y = 8, local_size_z = 8 ) in;
-//layout (local_size_x = 64, local_size_y = 1, local_size_z = 1 ) in;
+#else
+layout (local_size_x = 64, local_size_y = 1, local_size_z = 1 ) in;
+#endif
 
 uniform layout(binding=0, r8 ) image3D u_voxelImage;
 uniform layout(binding=1, r32ui ) uimageBuffer u_octreeBuf;
@@ -14,6 +18,7 @@ uniform int u_octreeLevel;
 uniform int u_voxelDim;
 uniform int u_numVoxelFrag;
 
+#if USE_SPARSE_OCTREE == 1
 void main()
 {
     vec4 data = vec4( 1.0, 0.0, 0.0, 0.0 );
@@ -135,14 +140,15 @@ void main()
 	else
 	    imageStore( u_voxelImage, ivec3(loc.xyz) , vec4(0,0,0,0) );
 }
+#else
+void main()
+{
+    uint thxIdx = gl_GlobalInvocationID.x;
+	if( thxIdx >= u_numVoxelFrag )
+	    return;
 
-//void main()
-//{
-//    uint thxIdx = gl_GlobalInvocationID.x;
-//	if( thxIdx >= u_numVoxelFrag )
-//	    return;
+    uvec4 texcoord = imageLoad( u_voxelPos, int(thxIdx) );
 
-//    uvec4 texcoord = imageLoad( u_voxelPos, int(thxIdx) );
-
-//	imageStore( u_voxelImage, ivec3(texcoord.xyz), vec4(1,0,0,0) );
-//}
+	imageStore( u_voxelImage, ivec3(texcoord.xyz), vec4(1,0,0,0) );
+}
+#endif

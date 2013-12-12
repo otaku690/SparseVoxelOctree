@@ -8,11 +8,18 @@
 
 # version 430
 
-layout (location = 0) in vec4 glVertex;
+layout (location = 0) in vec3 Position;
+layout (location = 1) in vec3 Normal;
+layout (location = 2) in vec2 texcoord;
 
 out vec3 v_vertex;
+out vec3 v_normal;
+out vec2 v_texcoord;
+
 void main()
 {
-    v_vertex = glVertex.xyz;
-    gl_Position =  glVertex;
+    v_vertex = Position;
+	v_normal = Normal;
+	v_texcoord = texcoord;
+    gl_Position = vec4( Position, 1 );
 }

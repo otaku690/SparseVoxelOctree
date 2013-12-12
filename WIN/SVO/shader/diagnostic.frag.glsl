@@ -121,6 +121,7 @@ void main() {
 
     out_Color = visibility*vec4( shade( u_Light, u_LightColor, color, posEyeSpace.xyz/posEyeSpace.w, normal ), 0 ); 
 	
+	out_Color = color;
 	//float s_depth = texture( u_shadowmap, fs_Texcoord ).r;
 	//out_Color = vec4( s_depth, s_depth, s_depth, 0 );
 }

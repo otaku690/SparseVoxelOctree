@@ -21,10 +21,18 @@ uniform int u_voxelDim;
 
 void main()
 {
-    v_texcoord = glVertex.xyz/u_voxelDim;
-	v_vertex = vec4(  v_texcoord*2-1, 1.0 );
-	//v_vertex += 1.0f/u_voxelDim;
+   
+    //v_texcoord = glVertex.xyz/u_voxelDim;
+	v_texcoord.x = gl_VertexID % u_voxelDim;
+	v_texcoord.z = (gl_VertexID / u_voxelDim) % u_voxelDim;
+	v_texcoord.y = gl_VertexID / (u_voxelDim*u_voxelDim);
+	gl_Position = u_Proj * u_ModelView * vec4( v_texcoord, 1.0 );
+
+	v_texcoord.xyz /= u_voxelDim;
+	v_vertex = vec4( v_texcoord*2-1, 1.0 );
+	v_vertex.z += 1.0/u_voxelDim;
+	v_vertex.x -= 1.0/u_voxelDim;
 	v_normal = u_Normal * glNormal;
 	v_color = glColor; 
-	gl_Position = u_Proj * u_ModelView * glVertex;
+	
 }

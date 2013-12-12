@@ -14,10 +14,12 @@
 #include "variables.h"
 #include "FreeImage.h"
 
+
 //Eanble High Performance GPU on Optimus devices
 extern "C" {
     _declspec(dllexport) DWORD NvOptimusEnablement = 0x00000001;
 }
+
 using namespace std;
 
 int g_width = 1280;
@@ -85,9 +87,15 @@ void main( int argc, char* argv[] )
     initFBO(g_width, g_height);
     initVertexData(); 
     buildVoxelList(); //build a voxel fragment list
+#if USE_SPARSE_OCTREE == 1
     buildSVO();       //build a sparse voxel octree
     deleteVoxelList();
     octreeTo3Dtex();  //for visualization purpose
+#else
+      
+    octreeTo3Dtex();  //for visualization purpose
+    deleteVoxelList();
+#endif
 
     initLight();
 

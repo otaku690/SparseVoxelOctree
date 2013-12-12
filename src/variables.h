@@ -7,6 +7,8 @@
 #ifndef _VARIABLES_H
 #define _VARIABLES_H
 
+#define USE_SPARSE_OCTREE 1
+
 //Forward declaration
 class objLoader;
 
