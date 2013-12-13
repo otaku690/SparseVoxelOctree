@@ -48,7 +48,6 @@ void Camera::adjust(float dx, // look left right
      z += tz;
 
     }
-    cout<<"X:"<<pos[0]<<" Y:"<<pos[1]<<" Z:"<<z<<endl;
 }
 
 mat4x4 Camera::get_view() {

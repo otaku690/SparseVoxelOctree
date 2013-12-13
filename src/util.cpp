@@ -42,7 +42,7 @@ void checkFramebufferStatus(GLenum framebufferStatus)
     }
 }
 
-GLuint loadTexturFromFile( const char* filename,  GLint internal_format, GLenum format )
+GLuint loadTexturFromFile( const char* filename,  GLint internal_format, GLenum format, unsigned int level )
 {
     FREE_IMAGE_FORMAT fif = FIF_UNKNOWN;
     FIBITMAP *dib(0);
@@ -76,13 +76,16 @@ GLuint loadTexturFromFile( const char* filename,  GLint internal_format, GLenum 
 
     glGenTextures( 1, &texId );
     glBindTexture( GL_TEXTURE_2D, texId );
-    glTexImage2D( GL_TEXTURE_2D, 0, internal_format, w, h, 0, format, GL_UNSIGNED_BYTE, bits);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexStorage2D( GL_TEXTURE_2D, level, internal_format, w, h );
+    glTexSubImage2D( GL_TEXTURE_2D, 0, 0, 0, w, h, format, GL_UNSIGNED_BYTE, bits);
+
+    glGenerateMipmap( GL_TEXTURE_2D );
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
+    //glTexImage2D( GL_TEXTURE_2D, 0, internal_format, w, h, 0, format, GL_UNSIGNED_BYTE, bits);
 	//Free FreeImage data
 	FreeImage_Unload(dib);
 

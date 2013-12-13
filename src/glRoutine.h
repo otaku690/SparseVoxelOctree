@@ -89,7 +89,7 @@ unsigned int gen3DTexture( int dim );
 int genLinearBuffer( int size, GLenum format, GLuint* tex, GLuint* tbo );
 
 //Atomic counter  generation
-unsigned int genAtomicBuffer( int num, int idx );
+void genAtomicBuffer( int num, unsigned int &buffer );
 
 //Fill a 3D texture with voxel octree leaf nodes
 void octreeTo3Dtex();

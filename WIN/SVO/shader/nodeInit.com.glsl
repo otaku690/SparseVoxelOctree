@@ -9,7 +9,8 @@ layout (local_size_x = 64, local_size_y = 1, local_size_z = 1 ) in;
 uniform int u_allocStart;
 uniform int u_num;
 
-uniform layout(binding = 0, r32ui ) uimageBuffer u_octreeBuf;
+uniform layout(binding = 0, r32ui ) coherent uimageBuffer u_octreeIdx;
+uniform layout(binding = 2, r32ui ) coherent uimageBuffer u_octreeKd;
 
 void main()
 {
@@ -18,5 +19,6 @@ void main()
 	if( thxId >= u_num )
 	    return;
 
-	imageStore( u_octreeBuf, int( u_allocStart + thxId), uvec4(0,0,0,0) );
+	imageStore( u_octreeIdx, int( u_allocStart + thxId), uvec4(0,0,0,0) );
+	imageStore( u_octreeKd, int( u_allocStart + thxId), uvec4(0,0,0,0) );
 }

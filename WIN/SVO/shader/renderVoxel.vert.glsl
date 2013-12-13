@@ -11,7 +11,7 @@ layout (location = 2) in vec3 glNormal;
 
 out vec3 v_normal;
 out vec4 v_vertex;
-out vec3 v_texcoord;
+out uvec3 v_texcoord;
 out vec4 v_color;
 
 uniform mat4 u_ModelView;
@@ -28,8 +28,9 @@ void main()
 	v_texcoord.y = gl_VertexID / (u_voxelDim*u_voxelDim);
 	gl_Position = u_Proj * u_ModelView * vec4( v_texcoord, 1.0 );
 
-	v_texcoord.xyz /= u_voxelDim;
-	v_vertex = vec4( v_texcoord*2-1, 1.0 );
+	//v_texcoord.xyz /= u_voxelDim;
+	//v_vertex = vec4( v_texcoord*2-1, 1.0 );
+	v_vertex = vec4( v_texcoord/float(u_voxelDim)*2.0-1, 1.0 );
 	v_vertex.z += 1.0/u_voxelDim;
 	v_vertex.x -= 1.0/u_voxelDim;
 	v_normal = u_Normal * glNormal;

@@ -56,9 +56,11 @@ shader::ShaderProgram renderVoxelShader;  //Scene-displaying shader program
 
 //Shader programs-SVO construction
 shader::ShaderProgram voxelizeShader; //Scene-voxelization shader program
-shader::ComputeShader nodeFlagShader;
+shader::ComputeShader nodeFlagShader; 
 shader::ComputeShader nodeAllocShader;
 shader::ComputeShader nodeInitShader;
+shader::ComputeShader leafStoreShader;
+shader::ComputeShader mipmapNodeShader;
 
 shader::ComputeShader octreeTo3DtexShader;
 
@@ -98,8 +100,8 @@ GLuint voxelNrmlTbo = 0;  //texture buffer object for voxel fragment list (norma
 GLuint atomicBuffer = 0;
 
 //Octree pool buffer
-GLuint octreeNodeTex = 0;
-GLuint octreeNodeTbo = 0;
+GLuint octreeNodeTex[4] = {0}; //0: child node index
+GLuint octreeNodeTbo[4] = {0};
 
 //Textures for deferred shading
 GLuint depthFBTex = 0;
@@ -135,7 +137,7 @@ void glut_display()
     }
     else if( render_mode == RENDERVOXEL )
     {   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-        renderScene();
+        renderVoxel();
     }
     glutSwapBuffers();
 }
@@ -214,7 +216,7 @@ void glut_keyboard( unsigned char key, int x, int y )
             render_mode = RENDERSCENE;
             break;
         case '2':
-            render_mode = RENDERSCENEVOXEL;
+            render_mode = RENDERVOXEL;
             break;
         case '3':
 
@@ -266,6 +268,10 @@ void renderVoxel()
     renderVoxelShader.setParameter( shader::i1, (void*)&voxelDim, "u_voxelDim" );
     float halfDim = 1.0f/voxelDim;
     renderVoxelShader.setParameter( shader::f1, (void*)&(halfDim), "u_halfDim" );
+    renderVoxelShader.setParameter( shader::i1, (void*)&octreeLevel, "u_octreeLevel" );
+
+    glBindImageTexture( 0, octreeNodeTex[0], 0, GL_FALSE, 0, GL_READ_ONLY, GL_R32UI );
+    glBindImageTexture( 1, octreeNodeTex[1], 0, GL_FALSE, 0, GL_READ_ONLY, GL_R32UI );
 
     glActiveTexture(GL_TEXTURE0);
     glEnable( GL_TEXTURE_3D );
@@ -353,8 +359,8 @@ void renderScene()
         }
     }
       
-    if( render_mode == RENDERSCENEVOXEL )
-        renderVoxel();
+    //if( render_mode == RENDERSCENEVOXEL )
+    //    renderVoxel();
 
    
     //PASS 2: shadow map generation
@@ -515,9 +521,6 @@ void initFBO( int w, int h )
 
     // Instruct openGL that we won't bind a color texture with the currently bound FBO
     glReadBuffer(GL_NONE);
-    //GLint normal_loc = glGetFragDataLocation(pass_prog,"out_Normal");
-    //GLint position_loc = glGetFragDataLocation(pass_prog,"out_Position");
-    //GLint color_loc = glGetFragDataLocation(pass_prog,"out_Color");
 
     GLenum draws [NUM_RENDERTARGET];
     draws[0] = GL_COLOR_ATTACHMENT0;
@@ -626,6 +629,9 @@ void initShader()
     nodeAllocShader.init( "shader/nodeAlloc.com.glsl" );
     nodeInitShader.init( "shader/nodeInit.com.glsl" );
 
+    leafStoreShader.init( "shader/leafStore.com.glsl" );
+    //mipmapNodeShader.init( "shader/mipmapNode.com.glsl" );
+
     passShader.init( "shader/pass.vert.glsl", "shader/pass.frag.glsl" );
     deferredShader.init( "shader/shade.vert.glsl", "shader/diagnostic.frag.glsl" );
 
@@ -677,11 +683,11 @@ void initVertexData()
         for( int i = 0; i < model->numGroup; ++i )
         {
             if( model->groups[i].tex_filename.length() > 0 )
-                model->groups[i].texId = loadTexturFromFile( model->groups[i].tex_filename.c_str(), GL_RGB8, GL_BGR );
+                model->groups[i].texId = loadTexturFromFile( model->groups[i].tex_filename.c_str(), GL_RGB8, GL_BGR, 2 );
             else
                 model->groups[i].texId = 0;
             if( model->groups[i].bump_filename.length() > 0 )
-                model->groups[i].bumpTexId = loadTexturFromFile( model->groups[i].bump_filename.c_str(), GL_RGB8, GL_BGR );
+                model->groups[i].bumpTexId = loadTexturFromFile( model->groups[i].bump_filename.c_str(), GL_RGB8, GL_BGR, 0 );
             else
                 model->groups[i].bumpTexId = 0;
         }
@@ -748,6 +754,7 @@ int genLinearBuffer( int size, GLenum format, GLuint* tex, GLuint* tbo )
     glBindBuffer( GL_TEXTURE_BUFFER, *tbo );
     glBufferData( GL_TEXTURE_BUFFER, size, 0, GL_STATIC_DRAW );
     err = glGetError();
+
     if( (*tex) > 0 )
         glDeleteTextures( 1, tex ); //delete previously created texture
 
@@ -762,17 +769,17 @@ int genLinearBuffer( int size, GLenum format, GLuint* tex, GLuint* tbo )
     return err;
 }
 
-unsigned int genAtomicBuffer( int num, int idx )
+void genAtomicBuffer( int num, unsigned int &buffer )
 {
-    GLuint buffer;
     GLuint initVal = 0;
 
+    if( buffer )
+        glDeleteBuffers( 1, &buffer );
     glGenBuffers( 1, &buffer );
     glBindBuffer( GL_ATOMIC_COUNTER_BUFFER, buffer );
     glBufferData( GL_ATOMIC_COUNTER_BUFFER, sizeof( GLuint ), &initVal, GL_STATIC_DRAW );
     glBindBuffer( GL_ATOMIC_COUNTER_BUFFER, 0 );
 
-    return buffer;
 }
 
 //create a screen-size quad
@@ -905,7 +912,7 @@ void voxelizeScene( int bStore )
     if( bStore == 1 )
     {
         glBindImageTexture( 0, voxelPosTex, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGB10_A2UI );
-        glBindImageTexture( 1, voxelKdTex, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA16F );
+        glBindImageTexture( 1, voxelKdTex, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8 );
         glBindImageTexture( 2, voxelNrmlTex, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA16F );
         voxelizeShader.setTexParameter( 0, "u_voxelPos" );
     }
@@ -962,9 +969,8 @@ void buildVoxelList()
     GLenum err;
     
     //Create atomic counter buffer
-    if( atomicBuffer > 0 )
-        glDeleteBuffers( 1, &atomicBuffer );
-    atomicBuffer = genAtomicBuffer( 1, 0 );
+
+    genAtomicBuffer( 1, atomicBuffer );
  
     voxelizeScene(0);
     glMemoryBarrier( GL_ATOMIC_COUNTER_BARRIER_BIT );
@@ -976,11 +982,11 @@ void buildVoxelList()
     err = glGetError();
 
     numVoxelFrag = count[0];
-
+    cout<<"Number of Entries in Voxel Fragment List: "<<numVoxelFrag<<endl;
     //Create buffers for voxel fragment list
     genLinearBuffer( sizeof(GLuint) * numVoxelFrag, GL_R32UI, &voxelPosTex, &voxelPosTbo );
-    genLinearBuffer( sizeof(GLuint) * numVoxelFrag, GL_RGBA16F, &voxelKdTex, &voxelKdTbo ); 
-    genLinearBuffer( sizeof(GLuint) * numVoxelFrag, GL_RGBA16F, &voxelNrmlTex, &voxelNrmlTbo ); 
+    genLinearBuffer( sizeof(GLuint) * numVoxelFrag, GL_RGBA8, &voxelKdTex, &voxelKdTbo ); 
+    //genLinearBuffer( sizeof(GLuint) * numVoxelFrag, GL_RGBA16F, &voxelNrmlTex, &voxelNrmlTbo ); 
     
     //reset counter
     memset( count, 0, sizeof( GLuint ) );
@@ -1005,7 +1011,7 @@ void buildSVO()
 { 
     GLenum err;
 
-    GLuint allocCounter;
+    GLuint allocCounter = 0;
     vector<unsigned int> allocList; //the vector records the number of nodes in each tree level
     allocList.push_back(1); //root level has one node
 
@@ -1017,13 +1023,21 @@ void buildSVO()
         nTmp *= 8;
         totalNode += nTmp;
     }
-    totalNode /= 10;
-    //Create an octree node pool with one-eighth maximum node number
-    genLinearBuffer( sizeof(GLuint)*totalNode , GL_R32UI, &octreeNodeTex, &octreeNodeTbo );
+    cout<<"Max possible node: "<<totalNode<<endl;
+    //Heuristically cut down the allocation size
+    totalNode /= 3;
+    cout<<"Size of node pool allocated: "<<totalNode<<endl;
+    //Create an octree node pool
+    //This is for storing child node indices
+    genLinearBuffer( sizeof(GLuint)*totalNode , GL_R32UI, &octreeNodeTex[0], &octreeNodeTbo[0] );
+
+    //This is for storing diffuse 
+    genLinearBuffer( sizeof(GLuint)*totalNode , GL_R32UI, &octreeNodeTex[1], &octreeNodeTbo[1] );
 
     //Create an atomic counter for counting # of allocated node tiles, in each octree level
-    allocCounter = genAtomicBuffer( 1, 0 );
-
+    genAtomicBuffer( 1, allocCounter );
+     err = glGetError();
+        cout<<"SVO build alloc "<<glewGetErrorString(err)<<" Error code:"<<err<<endl;
     //For each octree level (top to bottom), subdivde nodes in 3 steps
     //1. flag nodes that have child nodes ( one thread for each entries in voexl fragment list )
     //2. allocate buffer space for child nodes ( one thread for each node )
@@ -1039,7 +1053,7 @@ void buildSVO()
         nodeFlagShader.setParameter( shader::i1, (void*)&i, "u_level" );
         nodeFlagShader.setParameter( shader::i1, (void*)&voxelDim, "u_voxelDim" );
         glBindImageTexture( 0, voxelPosTex, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGB10_A2UI );
-        glBindImageTexture( 1, octreeNodeTex, 0, GL_FALSE, 0, GL_READ_WRITE, GL_R32UI );
+        glBindImageTexture( 1, octreeNodeTex[0], 0, GL_FALSE, 0, GL_READ_WRITE, GL_R32UI );
         glDispatchCompute( groupDim, 1, 1 );
         glMemoryBarrier( GL_SHADER_IMAGE_ACCESS_BARRIER_BIT );
 
@@ -1049,7 +1063,7 @@ void buildSVO()
         nodeAllocShader.setParameter( shader::i1, (void*)&numThread, "u_num" );
         nodeAllocShader.setParameter( shader::i1, (void*)&nodeOffset, "u_start" );
         nodeAllocShader.setParameter( shader::i1, (void*)&allocOffset, "u_allocStart" );
-        glBindImageTexture( 0, octreeNodeTex, 0, GL_FALSE, 0, GL_READ_WRITE, GL_R32UI );
+        glBindImageTexture( 0, octreeNodeTex[0], 0, GL_FALSE, 0, GL_READ_WRITE, GL_R32UI );
         glBindBufferBase( GL_ATOMIC_COUNTER_BUFFER, 0, allocCounter );
 
         int allocGroupDim = (allocList[i]+63)/64;
@@ -1069,7 +1083,8 @@ void buildSVO()
         nodeInitShader.use();
         nodeInitShader.setParameter( shader::i1, (void*)&nodeAllocated, "u_num" );
         nodeInitShader.setParameter( shader::i1, (void*)&allocOffset, "u_allocStart" );
-        glBindImageTexture( 0, octreeNodeTex, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_R32UI );
+        glBindImageTexture( 0, octreeNodeTex[0], 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_R32UI );
+        glBindImageTexture( 1, octreeNodeTex[1], 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_R32UI );
 
         int initGroupDim = ( nodeAllocated + 63 ) / 64;
         glDispatchCompute( initGroupDim, 1, 1 );
@@ -1079,19 +1094,36 @@ void buildSVO()
         allocList.push_back( nodeAllocated ); //titleAllocated * 8 is the number of threads
                                               //we want to launch in the next level
         nodeOffset += allocList[i]; //nodeOffset is the starting node in the next level
-        allocOffset += tileAllocated * 8; //allocOffset is the starting address of remaining free space
+        allocOffset += nodeAllocated; //allocOffset is the starting address of remaining free space
+       
         err = glGetError();
-
+        cout<<"SVO build iteration "<<glewGetErrorString(err)<<" Error code:"<<err<<endl;
     }
-        //node flag
-        nodeFlagShader.use();
-        nodeFlagShader.setParameter( shader::i1, (void*)&numVoxelFrag, "u_numVoxelFrag" );
-        nodeFlagShader.setParameter( shader::i1, (void*)&octreeLevel, "u_level" );
-        nodeFlagShader.setParameter( shader::i1, (void*)&voxelDim, "u_voxelDim" );
-        glBindImageTexture( 0, voxelPosTex, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGB10_A2UI );
-        glBindImageTexture( 1, octreeNodeTex, 0, GL_FALSE, 0, GL_READ_WRITE, GL_R32UI );
-        glDispatchCompute( groupDim, 1, 1 );
-        glMemoryBarrier( GL_SHADER_IMAGE_ACCESS_BARRIER_BIT );
+    cout<<"Total nodes consumed: "<<allocOffset<<endl;
+
+    //flag nonempty leaf nodes
+    nodeFlagShader.use();
+    nodeFlagShader.setParameter( shader::i1, (void*)&numVoxelFrag, "u_numVoxelFrag" );
+    nodeFlagShader.setParameter( shader::i1, (void*)&octreeLevel, "u_level" );
+    nodeFlagShader.setParameter( shader::i1, (void*)&voxelDim, "u_voxelDim" );
+    glBindImageTexture( 0, voxelPosTex, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGB10_A2UI );
+    glBindImageTexture( 1, octreeNodeTex[0], 0, GL_FALSE, 0, GL_READ_WRITE, GL_R32UI );
+    glDispatchCompute( groupDim, 1, 1 );
+    glMemoryBarrier( GL_SHADER_IMAGE_ACCESS_BARRIER_BIT );
+
+    //Store surface information ( Color, normal, etc. ) into the octree leaf nodes
+    leafStoreShader.use();
+    leafStoreShader.setParameter( shader::i1, (void*)&numVoxelFrag, "u_numVoxelFrag" );
+    leafStoreShader.setParameter( shader::i1, (void*)&octreeLevel, "u_octreeLevel" );
+    leafStoreShader.setParameter( shader::i1, (void*)&voxelDim, "u_voxelDim" );
+    glBindImageTexture( 0, octreeNodeTex[0], 0, GL_FALSE, 0, GL_READ_ONLY, GL_R32UI );
+    glBindImageTexture( 1, octreeNodeTex[1], 0, GL_FALSE, 0, GL_READ_WRITE, GL_R32UI );
+    glBindImageTexture( 2, voxelPosTex, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGB10_A2UI );
+    glBindImageTexture( 3, voxelKdTex, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA8 );
+    glDispatchCompute( groupDim, 1, 1 );
+    glMemoryBarrier( GL_SHADER_IMAGE_ACCESS_BARRIER_BIT );
+
+    glDeleteBuffers( 1, &allocCounter );
 }
 
 void octreeTo3Dtex()
@@ -1111,7 +1143,7 @@ void octreeTo3Dtex()
 
     glBindImageTexture( 0, voxelTex, 0, GL_TRUE, voxelDim, GL_WRITE_ONLY, GL_R8 );
 
-    glBindImageTexture( 1, octreeNodeTex, 0, GL_FALSE, 0, GL_READ_ONLY, GL_R32UI );
+    glBindImageTexture( 1, octreeNodeTex[0], 0, GL_FALSE, 0, GL_READ_ONLY, GL_R32UI );
     glBindImageTexture( 2, voxelPosTex, 0,  GL_FALSE, 0, GL_READ_ONLY, GL_RGB10_A2UI );
     glBindImageTexture( 3, voxelKdTex, 0,  GL_FALSE, 0, GL_READ_ONLY, GL_RGBA16F); 
     glBindImageTexture( 4, voxelNrmlTex, 0,  GL_FALSE, 0, GL_READ_ONLY, GL_RGBA16F ); 

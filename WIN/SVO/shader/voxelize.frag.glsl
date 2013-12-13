@@ -22,7 +22,7 @@ layout (pixel_center_integer) in vec4 gl_FragCoord;
 layout ( binding = 0, offset = 0 ) uniform atomic_uint u_voxelFragCount;
 
 uniform layout(binding = 0, rgb10_a2ui) uimageBuffer u_voxelPos;
-uniform layout(binding = 1, rgba16f) imageBuffer u_voxelKd;
+uniform layout(binding = 1, rgba8 ) imageBuffer u_voxelKd;
 uniform layout(binding = 2, rgba16f) imageBuffer u_voxelNrml;
 
 uniform vec3 u_Color;
@@ -76,7 +76,7 @@ void main()
 
 	   imageStore( u_voxelPos, int(idx), texcoord );
 	   imageStore( u_voxelNrml, int(idx), vec4(N,0) );
-	   imageStore( u_voxelKd, int(idx), vec4( C, u_shininess ) );
+	   imageStore( u_voxelKd, int(idx), vec4( C, 0 ) );
 	}
 
 	//imageStore( u_voxelImage, texcoord, data );

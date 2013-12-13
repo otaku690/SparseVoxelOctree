@@ -118,5 +118,11 @@
     <None Include="shader\shadowmap.frag.glsl">
       <Filter>Source Files\Shader</Filter>
     </None>
+    <None Include="shader\leafStore.com.glsl">
+      <Filter>Source Files\Shader</Filter>
+    </None>
+    <None Include="shader\mipmapNode.glsl">
+      <Filter>Source Files\Shader</Filter>
+    </None>
   </ItemGroup>
 </Project>

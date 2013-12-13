@@ -90,7 +90,7 @@ void main( int argc, char* argv[] )
 #if USE_SPARSE_OCTREE == 1
     buildSVO();       //build a sparse voxel octree
     deleteVoxelList();
-    octreeTo3Dtex();  //for visualization purpose
+    //octreeTo3Dtex();  //for visualization purpose
 #else
       
     octreeTo3Dtex();  //for visualization purpose
