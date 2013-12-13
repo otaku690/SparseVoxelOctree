@@ -28,11 +28,11 @@ Sparse Voxel Octree Implementation - Upenn CIS-565 final project
    
   ![naive rasterization](doc/withoutConvRast.jpg)  
   
-  The flagpoles are not fully voxelized. This scenario occurs because naive rasterization won't generate fragments in pixel loctions where pixel center is not 
+  The flagpoles are not fully voxelized. This scenario occurs because naive rasterization won't generate fragments in pixel locations where pixel center is not 
   covered by primitives.  
-  To mitigate this problem, this implementaiton uses a conservative rasterizaton method from Hertel et al.  
+  To mitigate this problem, this implementaiton uses a conservative rasterizaton method from [Hertel et al.](http://wwwcg.in.tum.de/research/research/publications/2009/a-hybrid-gpu-rendering-pipeline-for-alias-free-hard-shadows.html)  
   Simply put, the triangles are enlarged in clip space in geometry shader to ensure every pixel location covered by the triangles has fragment generated.  
-  The following is the result of the oonservative rasterization:  
+  The following is the result of the conservative rasterization:  
   ![conservative rasterization](doc/withConvRast.jpg)  
   Now the flagpoles are fully voxelized.
   
