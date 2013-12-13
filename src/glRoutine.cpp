@@ -1025,7 +1025,7 @@ void buildSVO()
     }
     cout<<"Max possible node: "<<totalNode<<endl;
     //Heuristically cut down the allocation size
-    totalNode /= 3;
+    totalNode = 10000000;
     cout<<"Size of node pool allocated: "<<totalNode<<endl;
     //Create an octree node pool
     //This is for storing child node indices
@@ -1044,7 +1044,10 @@ void buildSVO()
     //3. initialize the content of child nodes ( one thread for each node in the new octree level )
     int nodeOffset = 0;
     int allocOffset = 1;
-    int groupDim  = (numVoxelFrag + 63)/64;
+    int dataWidth = 1024;
+    int dataHeight = (numVoxelFrag+1023) / dataWidth;
+    int groupDimX = dataWidth/8;
+    int groupDimY = (dataHeight+7)/8;
     for( int i = 0; i < octreeLevel; ++i )
     {
         //node flag
@@ -1054,7 +1057,7 @@ void buildSVO()
         nodeFlagShader.setParameter( shader::i1, (void*)&voxelDim, "u_voxelDim" );
         glBindImageTexture( 0, voxelPosTex, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGB10_A2UI );
         glBindImageTexture( 1, octreeNodeTex[0], 0, GL_FALSE, 0, GL_READ_WRITE, GL_R32UI );
-        glDispatchCompute( groupDim, 1, 1 );
+        glDispatchCompute(groupDimX, groupDimY, 1 );
         glMemoryBarrier( GL_SHADER_IMAGE_ACCESS_BARRIER_BIT );
 
         //node tile allocation
@@ -1086,8 +1089,11 @@ void buildSVO()
         glBindImageTexture( 0, octreeNodeTex[0], 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_R32UI );
         glBindImageTexture( 1, octreeNodeTex[1], 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_R32UI );
 
-        int initGroupDim = ( nodeAllocated + 63 ) / 64;
-        glDispatchCompute( initGroupDim, 1, 1 );
+        dataWidth = 1024;
+        dataHeight = (nodeAllocated +1023) / dataWidth;
+        int initGroupDimX =dataWidth/8;
+        int initGroupDimY = (dataHeight+7)/8;
+        glDispatchCompute( initGroupDimX, initGroupDimY, 1 );
         glMemoryBarrier( GL_SHADER_IMAGE_ACCESS_BARRIER_BIT );
 
         //update offsets for next level
@@ -1108,7 +1114,7 @@ void buildSVO()
     nodeFlagShader.setParameter( shader::i1, (void*)&voxelDim, "u_voxelDim" );
     glBindImageTexture( 0, voxelPosTex, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGB10_A2UI );
     glBindImageTexture( 1, octreeNodeTex[0], 0, GL_FALSE, 0, GL_READ_WRITE, GL_R32UI );
-    glDispatchCompute( groupDim, 1, 1 );
+    glDispatchCompute( groupDimX, groupDimY, 1 );
     glMemoryBarrier( GL_SHADER_IMAGE_ACCESS_BARRIER_BIT );
 
     //Store surface information ( Color, normal, etc. ) into the octree leaf nodes
@@ -1120,7 +1126,7 @@ void buildSVO()
     glBindImageTexture( 1, octreeNodeTex[1], 0, GL_FALSE, 0, GL_READ_WRITE, GL_R32UI );
     glBindImageTexture( 2, voxelPosTex, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGB10_A2UI );
     glBindImageTexture( 3, voxelKdTex, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA8 );
-    glDispatchCompute( groupDim, 1, 1 );
+    glDispatchCompute( groupDimX, groupDimY, 1 );
     glMemoryBarrier( GL_SHADER_IMAGE_ACCESS_BARRIER_BIT );
 
     glDeleteBuffers( 1, &allocCounter );

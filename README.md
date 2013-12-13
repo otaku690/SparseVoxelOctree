@@ -4,6 +4,9 @@ SparseVoxelOctree
 Sparse Voxel Octree Implementation - Upenn CIS-565 final project
 
 # Current Progress  
+ * SVO construction is completed.
+ * Might need two more overnighters to do the Voxel Cone Tracing part.  
+ 
  ![Voxelized scene](doc/voxelColorScene.jpg) 
  
 ## Alpha presentation at UPenn CIS-565:
@@ -55,6 +58,11 @@ The following image shows a voxelized Crytek Sponza model with color shown:
  
 ## Voxel Cone Tracing 
  * Still working on it.
+
+## Performance Evaluation
+ * One of the goal of SVO is to reduce memory consumption, here is a comparison of  number of voxel nodes required in various data structure:  
+ 
+ ![chart](doc/voxelnodecompare.jpg)
  
 ## References:
  * Cyril Crassin and Simon Green. “Octree-based Sparse Voxelization Using the GPU Hardware Rasterizer.” OpenGL Insights, pp. 303-319.
