@@ -13,7 +13,7 @@ Sparse Voxel Octree Implementation - Upenn CIS-565 final project
  * [slides](doc/alphademo.ppt)
  
 ## Final presentation at UPenn CIS-565:
-
+ * [final presenttation](doc/cis565finalpresentation.ppt)
 ## Scene Voxelization using GPU rasterization
  * Use the method described in [Ch. 22 of OpenGL Insight](http://www.seas.upenn.edu/~pcozzi/OpenGLInsights/OpenGLInsights-SparseVoxelization.pdf).
  * Each triangle is orthographically projected, in geometry shader, along the dominant axis of its plane normal vector.
@@ -57,7 +57,7 @@ The following image shows a voxelized Crytek Sponza model with color shown:
  ![Voxelized scene](doc/voxelColorScene.jpg)
  
 ## Voxel Cone Tracing 
- * Still working on it.
+ * Still working on it...
 
 ## Performance Evaluation
  * One of the goal of SVO is to reduce memory consumption, here is a comparison of  number of voxel nodes required in various data structure:  
