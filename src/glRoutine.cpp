@@ -30,7 +30,7 @@ mat4 projection;
 mat4 normalMat;
 
 vec3 eyePos = vec3(0,0,0 );
-vec3 eyeLook = vec3(0,0,-1);
+vec3 eyeLook = vec3(-1,0,-1);
 vec3 upDir = vec3(0,1,0);
 Camera cam( eyePos, eyeLook, upDir );
 
@@ -213,13 +213,30 @@ void glut_keyboard( unsigned char key, int x, int y )
             exit(0.0);
             break;
         case '1':
+            glutSetWindowTitle("SVO" );
             render_mode = RENDERSCENE;
             break;
         case '2':
+            glutSetWindowTitle("SVO - 256x256x256 voxels" );
             render_mode = RENDERVOXEL;
+            if( voxelDim == 256 )
+                break;
+            voxelDim = 256;
+            octreeLevel = 8;
+            buildVoxelList();
+            buildSVO();
+            deleteVoxelList();
             break;
         case '3':
-
+            glutSetWindowTitle("SVO - 128x128x128 voxels" );
+            render_mode = RENDERVOXEL;
+            if( voxelDim == 128 )
+                break;
+            voxelDim = 128;
+            octreeLevel = 7;
+            buildVoxelList();
+            buildSVO();
+            deleteVoxelList();
             break;
         case ('w'):
             tz = -0.01;
@@ -273,11 +290,14 @@ void renderVoxel()
     glBindImageTexture( 0, octreeNodeTex[0], 0, GL_FALSE, 0, GL_READ_ONLY, GL_R32UI );
     glBindImageTexture( 1, octreeNodeTex[1], 0, GL_FALSE, 0, GL_READ_ONLY, GL_R32UI );
 
-    glActiveTexture(GL_TEXTURE0);
-    glEnable( GL_TEXTURE_3D );
-    glBindTexture(GL_TEXTURE_3D, voxelTex );
-    renderVoxelShader.setTexParameter( 0, "u_voxel" );
-
+    //glActiveTexture(GL_TEXTURE0);
+    //glEnable( GL_TEXTURE_BUFFER );
+    //glBindTexture(GL_TEXTURE_BUFFER, octreeNodeTex[0] );
+    //renderVoxelShader.setTexParameter( 0, "u_octreeIdx" );
+    //glActiveTexture(GL_TEXTURE1);
+    //glEnable( GL_TEXTURE_BUFFER );
+    //glBindTexture(GL_TEXTURE_BUFFER, octreeNodeTex[1] );
+    //renderVoxelShader.setTexParameter( 1, "u_octreeKd" );
 
     int numModel = g_meshloader.getModelCount();
     //glBindBuffer( GL_ARRAY_BUFFER, vbo[VOXEL3DTEX] );
@@ -364,7 +384,7 @@ void renderScene()
 
    
     //PASS 2: shadow map generation
-    //renderShadowMap( light1 );
+    renderShadowMap( light1 );
 
     //PASS 3: shading
     deferredShader.use();
@@ -438,7 +458,8 @@ void renderShadowMap( Light &light )
 {
     glBindFramebuffer( GL_FRAMEBUFFER, FBO[1] );
     glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-
+    glDisable( GL_CULL_FACE );
+    glPolygonOffset(1.1, 4.0);
     shadowmapShader.use();
 
     mat4 depthProj = glm::perspective<float>(60, 1, zNear, zFar );
@@ -487,7 +508,7 @@ void renderShadowMap( Light &light )
             
         }
     }
-
+    glPolygonOffset(0,0);
     glBindFramebuffer( GL_FRAMEBUFFER, 0 );
 }
 
@@ -1004,7 +1025,9 @@ void buildVoxelList()
 void deleteVoxelList()
 {
     glDeleteTextures( 1, &voxelPosTex );
+    voxelPosTex = 0;
     glDeleteBuffers( 1, &voxelPosTbo );
+    voxelPosTbo = 0;
 }
 
 void buildSVO()
@@ -1025,7 +1048,7 @@ void buildSVO()
     }
     cout<<"Max possible node: "<<totalNode<<endl;
     //Heuristically cut down the allocation size
-    totalNode = 10000000;
+    //totalNode = 10000000;
     cout<<"Size of node pool allocated: "<<totalNode<<endl;
     //Create an octree node pool
     //This is for storing child node indices
@@ -1130,6 +1153,7 @@ void buildSVO()
     glMemoryBarrier( GL_SHADER_IMAGE_ACCESS_BARRIER_BIT );
 
     glDeleteBuffers( 1, &allocCounter );
+    allocCounter = 0;
 }
 
 void octreeTo3Dtex()

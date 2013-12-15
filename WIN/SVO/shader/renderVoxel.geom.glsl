@@ -28,6 +28,8 @@ uniform int u_octreeLevel;
 
 uniform layout(binding=0, r32ui ) uimageBuffer u_octreeBuf;
 uniform layout(binding=1, r32ui ) uimageBuffer u_octreeKd;
+//uniform usamplerBuffer u_octreeIdx;
+//uniform usamplerBuffer u_octreeKd;
 
 bool nodeOccupied( in uvec3 loc, out int leafIdx );
 
@@ -149,6 +151,7 @@ bool nodeOccupied( in uvec3 loc, out  int leafIdx )
     {
 	    leafIdx = int(idx);
 	    idx = imageLoad( u_octreeBuf, int(idx) ).r;
+		//idx = texelFetch( u_octreeIdx, int(idx) ).r;
 		if( (idx & 0x80000000) == 0 )
 	    {
 		    bOccupied= false;
@@ -259,6 +262,7 @@ void main()
 	int leafIdx;
 	if( nodeOccupied( v_texcoord[0], leafIdx )  )
 	{
+	    //uint val = texelFetch( u_octreeKd,leafIdx ).r;
 	    uint val =  imageLoad( u_octreeKd, leafIdx ).r;
 	    f_color =  convRGBA8ToVec4(val).rgba/255 ; 
 	}

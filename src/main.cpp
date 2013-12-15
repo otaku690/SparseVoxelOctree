@@ -28,10 +28,15 @@ int g_winId;
 
 objLoader g_meshloader;
 
-void main( int argc, char* argv[] )
+int  main( int argc, char* argv[] )
 {
     //load model
     int numLoadedMesh = 0;
+    if( argc ==1 )
+     {
+        cout << "Usage: mesh=[obj file]" << endl;
+        return 0;
+    }       
     for( int i = 1; i < argc; ++i )
     {
         string header;
@@ -48,8 +53,7 @@ void main( int argc, char* argv[] )
     if( numLoadedMesh == 0 )
     {
         cout << "Usage: mesh=[obj file]" << endl;
-        system("pause");
-        return;
+         return 0;
     }
 
     FreeImage_Initialise();
@@ -102,4 +106,6 @@ void main( int argc, char* argv[] )
     glutMainLoop();
 
     FreeImage_DeInitialise();
+
+    exit(0);
 }

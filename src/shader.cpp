@@ -22,9 +22,13 @@ ShaderProgram::ShaderProgram()
 
 ShaderProgram::~ShaderProgram()
 {
+    if( program )
     glDeleteProgram( program );
+    if(vs )
     glDeleteShader( vs );
+    if( fs )
     glDeleteShader( fs );
+    if( gs )
     glDeleteShader( gs );
 }
 

@@ -10,7 +10,7 @@ uniform int u_allocStart;
 uniform int u_num;
 
 uniform layout(binding = 0, r32ui ) coherent uimageBuffer u_octreeIdx;
-uniform layout(binding = 2, r32ui ) coherent uimageBuffer u_octreeKd;
+uniform layout(binding = 1, r32ui ) coherent uimageBuffer u_octreeKd;
 
 void main()
 {

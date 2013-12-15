@@ -115,13 +115,12 @@ void main() {
 	float visibility = 1.0;
 	vec4 posEyeSpace = u_modelview * pos;
 	vec4 shadowCoord = u_lightMVP * pos;
-	float depthBias = 0.005;
+	float depthBias =0;
 	if( textureProj( u_shadowmap, shadowCoord.xyw ).z < ( shadowCoord.z - depthBias )/shadowCoord.w  )
-	    visibility = 0.1;
+	    visibility = 0.2;
 
     out_Color = visibility*vec4( shade( u_Light, u_LightColor, color, posEyeSpace.xyz/posEyeSpace.w, normal ), 0 ); 
-	
-	out_Color = color;
+
 	//float s_depth = texture( u_shadowmap, fs_Texcoord ).r;
 	//out_Color = vec4( s_depth, s_depth, s_depth, 0 );
 }
