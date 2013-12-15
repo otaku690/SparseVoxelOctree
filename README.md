@@ -14,6 +14,10 @@ Sparse Voxel Octree Implementation - Upenn CIS-565 final project
  
 ## Final presentation at UPenn CIS-565:
  * [final presenttation](doc/cis565finalpresentation.ppt)
+ 
+## Paper in JCGT format:
+ * [final presenttation](doc/cis565paper.pdf)
+ 
 ## Scene Voxelization using GPU rasterization
  * Use the method described in [Ch. 22 of OpenGL Insight](http://www.seas.upenn.edu/~pcozzi/OpenGLInsights/OpenGLInsights-SparseVoxelization.pdf).
  * Each triangle is orthographically projected, in geometry shader, along the dominant axis of its plane normal vector.
