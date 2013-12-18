@@ -121,7 +121,7 @@
     <None Include="shader\leafStore.com.glsl">
       <Filter>Source Files\Shader</Filter>
     </None>
-    <None Include="shader\mipmapNode.glsl">
+    <None Include="shader\mipmapNode.com.glsl">
       <Filter>Source Files\Shader</Filter>
     </None>
   </ItemGroup>

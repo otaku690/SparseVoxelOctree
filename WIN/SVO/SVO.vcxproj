@@ -105,7 +105,7 @@
     <None Include="shader\diagnostic.frag.glsl" />
     <None Include="shader\fill3Dtex.com.glsl" />
     <None Include="shader\leafStore.com.glsl" />
-    <None Include="shader\mipmapNode.glsl" />
+    <None Include="shader\mipmapNode.com.glsl" />
     <None Include="shader\pass.frag.glsl" />
     <None Include="shader\pass.vert.glsl" />
     <None Include="shader\renderVoxel.frag.glsl" />
