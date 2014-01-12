@@ -21,7 +21,7 @@ void main()
     uvec3 umin, umax;
     uvec4 loc;
 	int childIdx = 0;
-	uint node;
+	uint node, subnode;
 	uint voxelDim = u_voxelDim;
 	bool bFlag = true;
 	 
@@ -45,85 +45,94 @@ void main()
 		}
 		childIdx = int(node & 0x7FFFFFFF);  //mask out flag bit to get child idx
 
-	    if( ( loc.x >= umin.x && loc.x < umin.x+voxelDim ) &&
-		    ( loc.y >= umin.y && loc.y < umin.y+voxelDim ) &&
-			( loc.z >= umin.z && loc.z < umin.z+voxelDim )
-		  )
-	    {
+	 //   if( ( loc.x >= umin.x && loc.x < umin.x+voxelDim ) &&
+		//    ( loc.y >= umin.y && loc.y < umin.y+voxelDim ) &&
+		//	( loc.z >= umin.z && loc.z < umin.z+voxelDim )
+		//  )
+	 //   {
 		    
-		}
-		else if(
-            (loc.x >= umin.x+voxelDim && loc.x < umin.x + 2*voxelDim) &&
-		    (loc.y >= umin.y && loc.y < umin.y+voxelDim) &&
-			(loc.z >= umin.z && loc.z < umin.z+voxelDim )  
-		)
-		{
-		    childIdx += 1;
-		    umin.x = umin.x+voxelDim;
-	    }
-		else if(
-		    (loc.x >= umin.x && loc.x < umin.x+voxelDim) &&
-		    (loc.y >= umin.y && loc.y < umin.y+voxelDim) &&
-			(loc.z >= umin.z + voxelDim && loc.z < umin.z + 2*voxelDim )
-		)
-		{
-		    childIdx += 2;
-			umin.z += voxelDim;
-		}
-		else if(
-		    (loc.x >= umin.x + voxelDim && loc.x < umin.x + 2*voxelDim) &&
-		    (loc.y >= umin.y && loc.y < umin.y+voxelDim) &&
-			(loc.z >= umin.z + voxelDim && loc.z < umin.z + 2*voxelDim) 
-		)
-		{
-		    childIdx += 3;
-			umin.x += voxelDim;
-			umin.z += voxelDim;
-		}
-		else if(
-		    (loc.x >= umin.x && loc.x < umin.x + voxelDim) &&
-		    (loc.y >= umin.y + voxelDim && loc.y < umin.y + 2*voxelDim) &&
-			(loc.z >= umin.z && loc.z < umin.z + voxelDim )
-		)
-		{
-		    childIdx += 4;
-			umin.y += voxelDim;
+		//}
+		//else if(
+  //          (loc.x >= umin.x+voxelDim && loc.x < umin.x + 2*voxelDim) &&
+		//    (loc.y >= umin.y && loc.y < umin.y+voxelDim) &&
+		//	(loc.z >= umin.z && loc.z < umin.z+voxelDim )  
+		//)
+		//{
+		//    childIdx += 1;
+		//    umin.x = umin.x+voxelDim;
+	 //   }
+		//else if(
+		//    (loc.x >= umin.x && loc.x < umin.x+voxelDim) &&
+		//    (loc.y >= umin.y && loc.y < umin.y+voxelDim) &&
+		//	(loc.z >= umin.z + voxelDim && loc.z < umin.z + 2*voxelDim )
+		//)
+		//{
+		//    childIdx += 2;
+		//	umin.z += voxelDim;
+		//}
+		//else if(
+		//    (loc.x >= umin.x + voxelDim && loc.x < umin.x + 2*voxelDim) &&
+		//    (loc.y >= umin.y && loc.y < umin.y+voxelDim) &&
+		//	(loc.z >= umin.z + voxelDim && loc.z < umin.z + 2*voxelDim) 
+		//)
+		//{
+		//    childIdx += 3;
+		//	umin.x += voxelDim;
+		//	umin.z += voxelDim;
+		//}
+		//else if(
+		//    (loc.x >= umin.x && loc.x < umin.x + voxelDim) &&
+		//    (loc.y >= umin.y + voxelDim && loc.y < umin.y + 2*voxelDim) &&
+		//	(loc.z >= umin.z && loc.z < umin.z + voxelDim )
+		//)
+		//{
+		//    childIdx += 4;
+		//	umin.y += voxelDim;
 		
-		}
-		else if(
-		    (loc.x >= umin.x + voxelDim && loc.x < umin.x + 2*voxelDim) &&
-		    (loc.y >= umin.y + voxelDim && loc.y < umin.y + 2*voxelDim) &&
-			(loc.z >= umin.z && loc.z < umin.z + voxelDim) 
-		)
-		{
-		    childIdx += 5;
-			umin.x += voxelDim;
-			umin.y += voxelDim;
-		}
-		else if(
-		    (loc.x >= umin.x && loc.x < umin.x + voxelDim) &&
-		    (loc.y >= umin.y + voxelDim && loc.y < umin.y + 2*voxelDim) &&
-			(loc.z >= umin.z + voxelDim && loc.z < umin.z + voxelDim*2) 
-		)
-		{
-		    childIdx += 6;
-			umin.z += voxelDim;
-			umin.y += voxelDim;
-		}
-		else if(
-		    (loc.x >= umin.x + voxelDim && loc.x < umin.x + 2*voxelDim) &&
-		    (loc.y >= umin.y + voxelDim && loc.y < umin.y + 2*voxelDim) &&
-			(loc.z >= umin.z + voxelDim && loc.z < umin.z + voxelDim*2) 
-		)
-	    {
-		    childIdx += 7;
-			umin += voxelDim;
-		}
-		else
-		{
-		    bFlag = false;
-			break;
-		}
+		//}
+		//else if(
+		//    (loc.x >= umin.x + voxelDim && loc.x < umin.x + 2*voxelDim) &&
+		//    (loc.y >= umin.y + voxelDim && loc.y < umin.y + 2*voxelDim) &&
+		//	(loc.z >= umin.z && loc.z < umin.z + voxelDim) 
+		//)
+		//{
+		//    childIdx += 5;
+		//	umin.x += voxelDim;
+		//	umin.y += voxelDim;
+		//}
+		//else if(
+		//    (loc.x >= umin.x && loc.x < umin.x + voxelDim) &&
+		//    (loc.y >= umin.y + voxelDim && loc.y < umin.y + 2*voxelDim) &&
+		//	(loc.z >= umin.z + voxelDim && loc.z < umin.z + voxelDim*2) 
+		//)
+		//{
+		//    childIdx += 6;
+		//	umin.z += voxelDim;
+		//	umin.y += voxelDim;
+		//}
+		//else if(
+		//    (loc.x >= umin.x + voxelDim && loc.x < umin.x + 2*voxelDim) &&
+		//    (loc.y >= umin.y + voxelDim && loc.y < umin.y + 2*voxelDim) &&
+		//	(loc.z >= umin.z + voxelDim && loc.z < umin.z + voxelDim*2) 
+		//)
+	 //   {
+		//    childIdx += 7;
+		//	umin += voxelDim;
+		//}
+		//else
+		//{
+		//    bFlag = false;
+		//	break;
+		//}
+	    subnode = clamp( int(1 + loc.x - umin.x - voxelDim), 0, 1 );
+	    subnode += 4 * clamp( int(1 + loc.y - umin.y- voxelDim), 0, 1 );
+	    subnode += 2 * clamp( int(1 + loc.z - umin.z- voxelDim), 0, 1 );
+	    childIdx += int(subnode);
+	
+	    umin.x += voxelDim * clamp( int(1 + loc.x - umin.x - voxelDim), 0, 1 );
+	    umin.y += voxelDim * clamp( int(1 + loc.y - umin.y- voxelDim),  0, 1 );
+	    umin.z += voxelDim * clamp( int(1 + loc.z - umin.z- voxelDim),  0, 1 );
+
 		node = imageLoad( u_octreeBuf, childIdx ).r;
 	}
 	if( bFlag )

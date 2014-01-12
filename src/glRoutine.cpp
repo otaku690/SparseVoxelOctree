@@ -84,8 +84,8 @@ const int VOXEL3DTEX = 9;
 
 
 //voxel dimension
-int voxelDim = 256;
-int octreeLevel = 8;
+int voxelDim = 128;
+int octreeLevel = 7;
 unsigned int numVoxelFrag = 0;
 
 //voxel-creation rlated buffers

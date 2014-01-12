@@ -142,9 +142,10 @@ bool nodeOccupied( in uvec3 loc, out  int leafIdx )
 
 	//decide max and min coord for the root node
 	uvec3 umin = uvec3(0,0,0);
-	//uvec3 umax = uvec3( voxelDim, voxelDim, voxelDim ); 
+
     bool bOccupied = true;
 	uint idx;
+	uvec3 offset;
 	int depth;
 	
     for( depth = 0; depth <= u_octreeLevel; ++depth )
@@ -171,87 +172,97 @@ bool nodeOccupied( in uvec3 loc, out  int leafIdx )
 		}
 		voxelDim /= 2;
 
-	    if( (loc.x >= umin.x && loc.x < umin.x+voxelDim) &&
-		    (loc.y >= umin.y && loc.y < umin.y+voxelDim) &&
-			(loc.z >= umin.z && loc.z < umin.z+voxelDim) 
-		  )
-	    {
+	 //   if( (loc.x >= umin.x && loc.x < umin.x+voxelDim) &&
+		//    (loc.y >= umin.y && loc.y < umin.y+voxelDim) &&
+		//	(loc.z >= umin.z && loc.z < umin.z+voxelDim) 
+		//  )
+	 //   {
 		    
-		}
-		else if(
-            (loc.x >= umin.x+voxelDim && loc.x < umin.x + 2*voxelDim) &&
-		    (loc.y >= umin.y && loc.y < umin.y+voxelDim) &&
-			(loc.z >= umin.z && loc.z < umin.z+voxelDim)    
-		)
-		{
-		    idx += 1;
-		    umin.x += voxelDim;
-	    }
-		else if(
-		    (loc.x >= umin.x && loc.x < umin.x+voxelDim) &&
-		    (loc.y >= umin.y && loc.y < umin.y+voxelDim) &&
-			(loc.z >= umin.z + voxelDim && loc.z < umin.z + 2*voxelDim) 
-		)
-		{
-		    idx += 2;
-			umin.z += voxelDim;
-		}
-		else if(
-		    (loc.x >= umin.x + voxelDim && loc.x < umin.x + 2*voxelDim) &&
-		    (loc.y >= umin.y && loc.y < umin.y+voxelDim) &&
-			(loc.z >= umin.z + voxelDim && loc.z < umin.z + 2*voxelDim) 
-		)
-		{
-		    idx += 3;
-			umin.x += voxelDim;
-			umin.z += voxelDim;
-		}
-		else if(
-		    (loc.x >= umin.x && loc.x < umin.x + voxelDim) &&
-		    (loc.y >= umin.y + voxelDim && loc.y < umin.y + 2*voxelDim) &&
-			(loc.z >= umin.z && loc.z < umin.z + voxelDim) 
-		)
-		{
-		    idx += 4;
-			umin.y += voxelDim;
+		//}
+		//else if(
+  //          (loc.x >= umin.x+voxelDim && loc.x < umin.x + 2*voxelDim) &&
+		//    (loc.y >= umin.y && loc.y < umin.y+voxelDim) &&
+		//	(loc.z >= umin.z && loc.z < umin.z+voxelDim)    
+		//)
+		//{
+		//    idx += 1;
+		//    umin.x += voxelDim;
+	 //   }
+		//else if(
+		//    (loc.x >= umin.x && loc.x < umin.x+voxelDim) &&
+		//    (loc.y >= umin.y && loc.y < umin.y+voxelDim) &&
+		//	(loc.z >= umin.z + voxelDim && loc.z < umin.z + 2*voxelDim) 
+		//)
+		//{
+		//    idx += 2;
+		//	umin.z += voxelDim;
+		//}
+		//else if(
+		//    (loc.x >= umin.x + voxelDim && loc.x < umin.x + 2*voxelDim) &&
+		//    (loc.y >= umin.y && loc.y < umin.y+voxelDim) &&
+		//	(loc.z >= umin.z + voxelDim && loc.z < umin.z + 2*voxelDim) 
+		//)
+		//{
+		//    idx += 3;
+		//	umin.x += voxelDim;
+		//	umin.z += voxelDim;
+		//}
+		//else if(
+		//    (loc.x >= umin.x && loc.x < umin.x + voxelDim) &&
+		//    (loc.y >= umin.y + voxelDim && loc.y < umin.y + 2*voxelDim) &&
+		//	(loc.z >= umin.z && loc.z < umin.z + voxelDim) 
+		//)
+		//{
+		//    idx += 4;
+		//	umin.y += voxelDim;
 		
-		}
-		else if(
-		    (loc.x >= umin.x + voxelDim && loc.x < umin.x + 2*voxelDim) &&
-		    (loc.y >= umin.y + voxelDim && loc.y < umin.y + 2*voxelDim) &&
-			(loc.z >= umin.z && loc.z < umin.z + voxelDim )
-		)
-		{
-		    idx += 5;
-			umin.x += voxelDim;
-			umin.y += voxelDim;
-		}
-		else if(
-		    (loc.x >= umin.x && loc.x < umin.x + voxelDim) &&
-		    (loc.y >= umin.y + voxelDim && loc.y < umin.y + 2*voxelDim) &&
-			(loc.z >= umin.z + voxelDim && loc.z < umin.z + voxelDim*2) 
-		)
-		{
-		    idx += 6;
-			umin.z += voxelDim;
-			umin.y += voxelDim;
-		}
-		else if(
-		    (loc.x >= umin.x + voxelDim && loc.x < umin.x + 2* voxelDim) &&
-		    (loc.y >= umin.y + voxelDim && loc.y < umin.y + 2*voxelDim) &&
-			(loc.z >= umin.z + voxelDim && loc.z < umin.z + voxelDim*2 )
-		)
-	    {
-		    idx += 7;
-			umin += voxelDim;
-		}
-		else 
-		{
-		    bOccupied = false;
-		    break;
-	    }	
-		
-	} 
+		//}
+		//else if(
+		//    (loc.x >= umin.x + voxelDim && loc.x < umin.x + 2*voxelDim) &&
+		//    (loc.y >= umin.y + voxelDim && loc.y < umin.y + 2*voxelDim) &&
+		//	(loc.z >= umin.z && loc.z < umin.z + voxelDim )
+		//)
+		//{
+		//    idx += 5;
+		//	umin.x += voxelDim;
+		//	umin.y += voxelDim;
+		//}
+		//else if(
+		//    (loc.x >= umin.x && loc.x < umin.x + voxelDim) &&
+		//    (loc.y >= umin.y + voxelDim && loc.y < umin.y + 2*voxelDim) &&
+		//	(loc.z >= umin.z + voxelDim && loc.z < umin.z + voxelDim*2) 
+		//)
+		//{
+		//    idx += 6;
+		//	umin.z += voxelDim;
+		//	umin.y += voxelDim;
+		//}
+		//else if(
+		//    (loc.x >= umin.x + voxelDim && loc.x < umin.x + 2* voxelDim) &&
+		//    (loc.y >= umin.y + voxelDim && loc.y < umin.y + 2*voxelDim) &&
+		//	(loc.z >= umin.z + voxelDim && loc.z < umin.z + voxelDim*2 )
+		//)
+	 //   {
+		//    idx += 7;
+		//	umin += voxelDim;
+		//}
+		//else 
+		//{
+		//    bOccupied = false;
+		//    break;
+	 //   }	
+
+	    //offset.x = clamp( int(1 + loc.x - umin.x - voxelDim), 0, 1 );
+	    //offset.y = clamp( int(1 + loc.y - umin.y - voxelDim), 0, 1 );
+	    //offset.z = clamp( int(1 + loc.z - umin.z - voxelDim), 0, 1 );
+		offset = clamp( ivec3( 1 + loc - umin - voxelDim ), 0, 1 );
+	    idx += offset.x + 4*offset.y + 2*offset.z;
+	
+	    umin += voxelDim * offset;
+	    //umin.x += voxelDim * offset.x;
+	    //umin.y += voxelDim * offset.y;
+	    //umin.z += voxelDim * offset.z;
+	}
 
 	return bOccupied;
 }
